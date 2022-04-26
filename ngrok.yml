@@ -5,4 +5,4 @@ tunnels:
   interview:
     addr: 3000
     proto: http
-    hostname: ${applicant}.interview.workos.dev
+    hostname: matthew-ault.interview.workos.dev
