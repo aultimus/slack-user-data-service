@@ -1,0 +1,8 @@
+# ~/.ngrok2/ngrok.yml
+# Start the tunnel with: `ngrok start interview`
+authtoken: 1rqax49UJMK3JICGVyL3hRiQHac_3BWNhG75u2oJUM3Dp1v1c
+tunnels:
+  interview:
+    addr: 3000
+    proto: http
+    hostname: ${applicant}.interview.workos.dev
