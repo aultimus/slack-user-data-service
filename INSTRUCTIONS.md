@@ -1,8 +1,8 @@
 # Setup
 
-- An ngrok tunnel has been setup for you at https://${applicant}.interview.workos.dev. Use the provided `ngrok.yml` config file to start it.
-- We’ve created a Slack workspace for development: https://${applicant}-workos.slack.com. You’ll receive an invite for this workspace via email. Feel free to use this space as a sandbox—add users, modify users, etc.
-- We’ve also created a pre-configured Slack App that will send events to /webhooks on your ngrok tunnel. After you create your Slack account, you can view the app configuration here: https://api.slack.com/apps/${slackAppId}/event-subscriptions.
+- An ngrok tunnel has been setup for you at https://matthew-ault.interview.workos.dev. Use the provided `ngrok.yml` config file to start it.
+- We’ve created a Slack workspace for development: https://matthew-ault-workos.slack.com. You’ll receive an invite for this workspace via email. Feel free to use this space as a sandbox—add users, modify users, etc.
+- We’ve also created a pre-configured Slack App that will send events to /webhooks on your ngrok tunnel. After you create your Slack account, you can view the app configuration here: https://api.slack.com/apps/A03CYL14A5B/event-subscriptions.
 
 Let us know if you have any questions or want to jump on a quick call. We also enabled Slack Connect in the #workos-team channel if you need to ping our Engineering team.
 
