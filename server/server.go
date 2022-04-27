@@ -11,7 +11,7 @@ import (
 
 const (
 	ContentType    = "Content-Type"
-	DefaultPortNum = "8080"
+	DefaultPortNum = "3000"
 	MimeTypeJSON   = "application/json"
 )
 

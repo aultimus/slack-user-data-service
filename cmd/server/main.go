@@ -24,6 +24,9 @@ func main() {
 
 	var portNum = *flag.String("port", server.DefaultPortNum,
 		"TCP/IP port that this program listens on")
+	if portNum == "" {
+		portNum = server.DefaultPortNum
+	}
 
 	flag.Parse()
 
