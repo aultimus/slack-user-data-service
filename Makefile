@@ -2,7 +2,7 @@ ngrok:
 	ngrok start interview --config ngrok.yml
 
 build:
-	go build -o bin/server cmd/server/main.go
+	docker-compose build
 
 run:
-	go run cmd/server/main.go
+	docker-compose up --build

@@ -1,13 +1,24 @@
 package main
 
 import (
+	"os"
+	"time"
+
+	"github.com/go-playground/errors"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
+
 	"flag"
 
+	"github.com/cocoonlife/timber"
 	log "github.com/cocoonlife/timber"
+	"github.com/workos-code-challenge/matthew-ault/db"
 	"github.com/workos-code-challenge/matthew-ault/server"
 
 	"net/http"
 	_ "net/http/pprof"
+
+	_ "github.com/lib/pq"
 )
 
 func init() {
@@ -19,24 +30,73 @@ func init() {
 
 }
 
+func WaitForDB(dbConnStr string) (*sqlx.DB, error) {
+	maxRetries := 10
+	var handle *sqlx.DB
+	var err error
+
+	for i := 0; i < maxRetries; i++ {
+		handle, err = sqlx.Connect("postgres", dbConnStr)
+		if err != nil {
+			if i < maxRetries-1 {
+				log.Infof("sleeping for db connect")
+				time.Sleep(time.Second)
+				continue
+			}
+			return nil, err
+		}
+		break
+	}
+	log.Infof("connected to db")
+
+	// if db is spinning up, let's be fault tolerant and try a few times
+	for i := 0; i < maxRetries; i++ {
+		if err = handle.Ping(); err != nil {
+			if i < maxRetries-1 {
+				log.Infof("sleeping for db ping")
+				time.Sleep(time.Second)
+				continue
+			}
+			return nil, err
+		}
+		break
+	}
+	log.Infof("pinged db")
+	return handle, nil
+}
+
 func main() {
 	log.Infof("server started")
 
 	var portNum = *flag.String("port", server.DefaultPortNum,
 		"TCP/IP port that this program listens on")
+	flag.Parse()
 	if portNum == "" {
 		portNum = server.DefaultPortNum
 	}
 
-	flag.Parse()
+	// set up database
+	dbStr := os.Getenv("DB_CONNECTION_STRING")
+	dbConn, err := WaitForDB(dbStr)
+	if err != nil {
+		timber.Fatal(errors.Wrap(err, "failed to connect to database").AddTag("connection_string", dbStr))
+	}
+	defer dbConn.Close()
+
+	err = dbConn.Ping()
+	if err != nil {
+		timber.Fatal(errors.Wrap(err, "failed to connect to db"))
+	}
+	postgres := db.NewPostgres(dbConn)
 
 	// pprof - see: http://localhost:6060/debug/pprof/
 	go func() {
 		log.Errorf(http.ListenAndServe(":6060", nil))
 	}()
 
+	// set up app
 	app := server.NewApp()
-	err := app.Init(portNum)
+	err = app.Init(portNum, postgres)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}

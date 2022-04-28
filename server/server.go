@@ -22,11 +22,15 @@ func NewApp() *App {
 	return &App{}
 }
 
-type App struct {
-	server *http.Server
+type Storer interface {
 }
 
-func (a *App) Init(portNum string) error {
+type App struct {
+	server *http.Server
+	db     Storer
+}
+
+func (a *App) Init(portNum string, storer Storer) error {
 	log.Infof("init")
 	router := mux.NewRouter()
 
@@ -43,6 +47,7 @@ func (a *App) Init(portNum string) error {
 	router.HandleFunc("/webhooks", a.Webhooks)
 
 	a.server = server
+	a.db = storer
 	return nil
 }
 
@@ -52,11 +57,13 @@ func (a *App) Run() error {
 }
 
 func (a *App) Hello(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintln(w, "Hello world!")
+	fmt.Fprintln(w, "Hello world today!")
 }
 
 // Event represents a slack event data type which is received by the webhooks
-// endpoint
+// endpoint. This struct was initally generated using https://mholt.github.io/json-to-go/
+// id, name, deleted, real_name, tz, profile object (status_text, status_emoji, image_512).
+
 type Event struct {
 	APIAppID       string `json:"api_app_id"`
 	Authorizations []struct {
@@ -72,8 +79,8 @@ type Event struct {
 		Type    string `json:"type"`
 		User    struct {
 			Color             string `json:"color"`
-			Deleted           bool   `json:"deleted"`
-			ID                string `json:"id"`
+			Deleted           bool   `json:"deleted" db:"deleted"`
+			ID                string `json:"id" db:"id"`
 			IsAdmin           bool   `json:"is_admin"`
 			IsAppUser         bool   `json:"is_app_user"`
 			IsBot             bool   `json:"is_bot"`
@@ -83,7 +90,7 @@ type Event struct {
 			IsRestricted      bool   `json:"is_restricted"`
 			IsUltraRestricted bool   `json:"is_ultra_restricted"`
 			Locale            string `json:"locale"`
-			Name              string `json:"name"`
+			Name              string `json:"name" db:"name"`
 			Profile           struct {
 				AvatarHash             string        `json:"avatar_hash"`
 				DisplayName            string        `json:"display_name"`
@@ -95,24 +102,24 @@ type Event struct {
 				Image24                string        `json:"image_24"`
 				Image32                string        `json:"image_32"`
 				Image48                string        `json:"image_48"`
-				Image512               string        `json:"image_512"`
+				Image512               string        `json:"image_512" db:"image_512"`
 				Image72                string        `json:"image_72"`
 				LastName               string        `json:"last_name"`
 				Phone                  string        `json:"phone"`
 				RealName               string        `json:"real_name"`
 				RealNameNormalized     string        `json:"real_name_normalized"`
 				Skype                  string        `json:"skype"`
-				StatusEmoji            string        `json:"status_emoji"`
+				StatusEmoji            string        `json:"status_emoji" db:"profile_status_emoji"`
 				StatusEmojiDisplayInfo []interface{} `json:"status_emoji_display_info"`
 				StatusExpiration       int           `json:"status_expiration"`
-				StatusText             string        `json:"status_text"`
+				StatusText             string        `json:"status_text" db:"profile_status_text"`
 				StatusTextCanonical    string        `json:"status_text_canonical"`
 				Team                   string        `json:"team"`
 				Title                  string        `json:"title"`
 			} `json:"profile"`
-			RealName               string `json:"real_name"`
+			RealName               string `json:"real_name" db:"real_name"`
 			TeamID                 string `json:"team_id"`
-			Tz                     string `json:"tz"`
+			Tz                     string `json:"tz" db:"tz"`
 			TzLabel                string `json:"tz_label"`
 			TzOffset               int    `json:"tz_offset"`
 			Updated                int    `json:"updated"`
@@ -142,7 +149,5 @@ func (a *App) Webhooks(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// We recommend persisting the following user fields:
-	// id, name, deleted, real_name, tz, profile object (status_text, status_emoji, image_512).
 	spew.Dump(eventObj)
 }
