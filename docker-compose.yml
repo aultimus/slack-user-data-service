@@ -23,6 +23,7 @@ services:
      - "3000:3000"
     depends_on:
       - postgres
+    env_file:
+      - ./dev.env
     environment:
       DB_CONNECTION_STRING: "host=postgres port=5432 dbname=postgres user=postgres sslmode=disable"
-      SLACK_API_TOKEN: ${SLACK_API_TOKEN}

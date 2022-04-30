@@ -75,8 +75,8 @@ func main() {
 		portNum = server.DefaultPortNum
 	}
 
-	slackAPIToken, exists := os.LookupEnv("SLACK_API_TOKEN")
-	if !exists {
+	slackAPIToken := os.Getenv("SLACK_API_TOKEN")
+	if slackAPIToken == "" {
 		log.Fatal("SLACK_API_TOKEN env var not set")
 	}
 

@@ -8,5 +8,4 @@ down:
 	docker-compose down --volumes --remove-orphans
 
 run:
-	./env.sh
 	docker-compose up --build
