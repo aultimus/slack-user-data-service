@@ -99,13 +99,13 @@ func (a *App) UsersHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func (a *App) WebhooksHandler(w http.ResponseWriter, req *http.Request) {
-	defer req.Body.Close()
 
 	b, err := io.ReadAll(req.Body)
 	if err != nil {
 		log.Errorf("failed to parse slack event body: %v", err)
 		return
 	}
+	defer req.Body.Close()
 
 	//var eventObj models.Event
 	//err = json.Unmarshal(b, &eventObj)
