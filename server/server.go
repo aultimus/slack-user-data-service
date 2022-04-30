@@ -1,11 +1,11 @@
 package server
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"reflect"
+	"text/template"
 	"time"
 
 	log "github.com/cocoonlife/timber"
@@ -83,15 +83,13 @@ func (a *App) UsersHandler(w http.ResponseWriter, req *http.Request) {
 		log.Errorf("db GetAllUsers returned error: %v", err)
 		return
 	}
+	usersStruct := struct {
+		Users []models.User
+	}{Users: users}
+
 	// it may make sense to have a user facing User struct definition at some point
-	// dump to json in webpage for now
-	// TODO: render in form
-	b, err := json.Marshal(users)
-	if err != nil {
-		log.Errorf("failed to marshal users: %v", err)
-		return
-	}
-	w.Write(b)
+	tmpl, _ := template.ParseFiles("./html/users.html")
+	tmpl.Execute(w, usersStruct)
 }
 
 func (a *App) WebhooksHandler(w http.ResponseWriter, req *http.Request) {
