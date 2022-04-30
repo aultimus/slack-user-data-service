@@ -8,6 +8,7 @@ import (
 	"github.com/go-playground/errors"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	"github.com/slack-go/slack"
 
 	"flag"
 
@@ -100,9 +101,13 @@ func main() {
 		log.Errorf(http.ListenAndServe(":6060", nil))
 	}()
 
+	// TODO: make debug toggleable when starting server
+	slackClient := slack.New(slackAPIToken, slack.OptionDebug(true))
+
 	// set up app
 	app := server.NewApp()
-	err = app.Init(portNum, postgres, slackAPIToken)
+
+	err = app.Init(portNum, postgres, slackClient)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}

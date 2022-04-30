@@ -35,13 +35,17 @@ type Storer interface {
 	GetAllUsers() ([]models.User, error)
 }
 
+type Slacker interface {
+	GetUsersContext(ctx context.Context) ([]slack.User, error)
+}
+
 type App struct {
 	server      *http.Server
 	db          Storer
-	slackClient *slack.Client
+	slackClient Slacker
 }
 
-func (a *App) Init(portNum string, storer Storer, slackAPIToken string) error {
+func (a *App) Init(portNum string, storer Storer, slackClient Slacker) error {
 	log.Infof("init")
 	router := mux.NewRouter()
 
@@ -60,9 +64,7 @@ func (a *App) Init(portNum string, storer Storer, slackAPIToken string) error {
 
 	a.server = server
 	a.db = storer
-
-	// TODO: make debug toggleable when starting server
-	a.slackClient = slack.New(slackAPIToken, slack.OptionDebug(true))
+	a.slackClient = slackClient
 
 	// run asynchronously so we can still serve requests if api is down
 	go a.FetchUsersLoop()
