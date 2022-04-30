@@ -5,4 +5,5 @@ build:
 	docker-compose build
 
 run:
+	./env.sh
 	docker-compose up --build

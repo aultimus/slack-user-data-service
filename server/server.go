@@ -5,11 +5,15 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"reflect"
 	"time"
 
 	log "github.com/cocoonlife/timber"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
+	"github.com/slack-go/slack"
+	"github.com/slack-go/slack/slackevents"
+	"github.com/workos-code-challenge/matthew-ault/models"
 )
 
 const (
@@ -23,14 +27,19 @@ func NewApp() *App {
 }
 
 type Storer interface {
+	CreateUser(user models.User) error
+	CreateUsers(user []models.User) error
+	UpdateUser(user models.User) error
+	GetAllUsers() ([]models.User, error)
 }
 
 type App struct {
-	server *http.Server
-	db     Storer
+	server      *http.Server
+	db          Storer
+	slackClient *slack.Client
 }
 
-func (a *App) Init(portNum string, storer Storer) error {
+func (a *App) Init(portNum string, storer Storer, slackAPIToken string) error {
 	log.Infof("init")
 	router := mux.NewRouter()
 
@@ -43,111 +52,135 @@ func (a *App) Init(portNum string, storer Storer) error {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	router.HandleFunc("/", a.Hello)
-	router.HandleFunc("/webhooks", a.Webhooks)
+	router.HandleFunc("/", a.RootHandler)
+	router.HandleFunc("/users", a.UsersHandler).Methods(http.MethodGet)
+	router.HandleFunc("/webhooks", a.WebhooksHandler)
 
 	a.server = server
 	a.db = storer
+
+	// TODO: make debug toggleable when starting server
+	a.slackClient = slack.New(slackAPIToken, slack.OptionDebug(true))
+	a.FetchUsers()
+
 	return nil
 }
+
+// TODO: do something with long running requests and use context
 
 func (a *App) Run() error {
 	log.Infof("running server on %s", a.server.Addr)
 	return a.server.ListenAndServe()
 }
 
-func (a *App) Hello(w http.ResponseWriter, req *http.Request) {
+func (a *App) RootHandler(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintln(w, "Hello world today!")
 }
 
-// Event represents a slack event data type which is received by the webhooks
-// endpoint. This struct was initally generated using https://mholt.github.io/json-to-go/
-// id, name, deleted, real_name, tz, profile object (status_text, status_emoji, image_512).
-
-type Event struct {
-	APIAppID       string `json:"api_app_id"`
-	Authorizations []struct {
-		EnterpriseID        interface{} `json:"enterprise_id"`
-		IsBot               bool        `json:"is_bot"`
-		IsEnterpriseInstall bool        `json:"is_enterprise_install"`
-		TeamID              string      `json:"team_id"`
-		UserID              string      `json:"user_id"`
-	} `json:"authorizations"`
-	Event struct {
-		CacheTs int    `json:"cache_ts"`
-		EventTs string `json:"event_ts"`
-		Type    string `json:"type"`
-		User    struct {
-			Color             string `json:"color"`
-			Deleted           bool   `json:"deleted" db:"deleted"`
-			ID                string `json:"id" db:"id"`
-			IsAdmin           bool   `json:"is_admin"`
-			IsAppUser         bool   `json:"is_app_user"`
-			IsBot             bool   `json:"is_bot"`
-			IsEmailConfirmed  bool   `json:"is_email_confirmed"`
-			IsOwner           bool   `json:"is_owner"`
-			IsPrimaryOwner    bool   `json:"is_primary_owner"`
-			IsRestricted      bool   `json:"is_restricted"`
-			IsUltraRestricted bool   `json:"is_ultra_restricted"`
-			Locale            string `json:"locale"`
-			Name              string `json:"name" db:"name"`
-			Profile           struct {
-				AvatarHash             string        `json:"avatar_hash"`
-				DisplayName            string        `json:"display_name"`
-				DisplayNameNormalized  string        `json:"display_name_normalized"`
-				Email                  string        `json:"email"`
-				Fields                 interface{}   `json:"fields"`
-				FirstName              string        `json:"first_name"`
-				Image192               string        `json:"image_192"`
-				Image24                string        `json:"image_24"`
-				Image32                string        `json:"image_32"`
-				Image48                string        `json:"image_48"`
-				Image512               string        `json:"image_512" db:"image_512"`
-				Image72                string        `json:"image_72"`
-				LastName               string        `json:"last_name"`
-				Phone                  string        `json:"phone"`
-				RealName               string        `json:"real_name"`
-				RealNameNormalized     string        `json:"real_name_normalized"`
-				Skype                  string        `json:"skype"`
-				StatusEmoji            string        `json:"status_emoji" db:"profile_status_emoji"`
-				StatusEmojiDisplayInfo []interface{} `json:"status_emoji_display_info"`
-				StatusExpiration       int           `json:"status_expiration"`
-				StatusText             string        `json:"status_text" db:"profile_status_text"`
-				StatusTextCanonical    string        `json:"status_text_canonical"`
-				Team                   string        `json:"team"`
-				Title                  string        `json:"title"`
-			} `json:"profile"`
-			RealName               string `json:"real_name" db:"real_name"`
-			TeamID                 string `json:"team_id"`
-			Tz                     string `json:"tz" db:"tz"`
-			TzLabel                string `json:"tz_label"`
-			TzOffset               int    `json:"tz_offset"`
-			Updated                int    `json:"updated"`
-			WhoCanShareContactCard string `json:"who_can_share_contact_card"`
-		} `json:"user"`
-	} `json:"event"`
-	EventID            string `json:"event_id"`
-	EventTime          int    `json:"event_time"`
-	IsExtSharedChannel bool   `json:"is_ext_shared_channel"`
-	TeamID             string `json:"team_id"`
-	Token              string `json:"token"`
-	Type               string `json:"type"`
+func (a *App) UsersHandler(w http.ResponseWriter, req *http.Request) {
+	users, err := a.db.GetAllUsers()
+	if err != nil {
+		log.Errorf("db GetAllUsers returned error: %v", err)
+		return
+	}
+	// it may make sense to have a user facing User struct definition at some point
+	// dump to json in webpage for now
+	// TODO: render in form
+	b, err := json.Marshal(users)
+	if err != nil {
+		log.Errorf("failed to marshal users: %v", err)
+		return
+	}
+	w.Write(b)
 }
 
-func (a *App) Webhooks(w http.ResponseWriter, req *http.Request) {
+func (a *App) WebhooksHandler(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 
 	b, err := io.ReadAll(req.Body)
-	// b, err := ioutil.ReadAll(resp.Body)  Go.1.15 and earlier
 	if err != nil {
-		log.Fatalln(err)
-	}
-	var eventObj Event
-	err = json.Unmarshal(b, &eventObj)
-	if err != nil {
-		log.Errorf("error unmarshalling json: %v", err)
+		log.Errorf("failed to parse slack event body: %v", err)
 		return
 	}
 
-	spew.Dump(eventObj)
+	//var eventObj models.Event
+	//err = json.Unmarshal(b, &eventObj)
+	//if err != nil {
+	//	log.Errorf("error unmarshalling json: %v", err)
+	//	return
+	//}
+	// TODO: use verification
+	event, err := slackevents.ParseEvent(b, slackevents.OptionNoVerifyToken())
+	if err != nil {
+		log.Errorf("failed slackevents.ParseEvent: %v", err)
+		return
+	}
+	log.Debugf("received %s type event", event.InnerEvent.Type)
+	switch event.InnerEvent.Type {
+	// Note: go falls through by default
+	case "user_change":
+		// https://api.slack.com/events/user_change
+		log.Debugf("processing %s event", event.InnerEvent.Type)
+		switch event.InnerEvent.Data.(type) {
+		case *slack.UserChangeEvent:
+			//fmt.Println(string(b))
+			//spew.Dump(event)
+			apiUser := event.InnerEvent.Data.(*slack.UserChangeEvent).User
+			dbUser := APIToDBUser(apiUser)
+			err = a.db.UpdateUser(dbUser)
+			if err != nil {
+				log.Errorf("error during UpdateUser: %s, user: %s", err.Error(), spew.Sdump(dbUser))
+				return
+			}
+		default: // something went horribly wrong
+			log.Errorf("user_change event has inner data of type %v ", reflect.TypeOf(event.InnerEvent.Data))
+		}
+	default: // unregonised event type
+		log.Debugf("ignoring event of event type %s", event.InnerEvent.Type)
+	}
+}
+
+func APIToDBUser(in slack.User) models.User {
+	// we could either implement this function via marshalling and unmarshalling
+	// or via mapping. marshalling and unmarshalling is more extensible
+	// but less can go wrong with a mapping function like this
+	return models.User{
+		Deleted:            in.Deleted,
+		ID:                 in.ID,
+		Name:               in.Name,
+		ProfileImage512:    in.Profile.Image512,
+		ProfileStatusEmoji: in.Profile.StatusEmoji,
+		ProfileStatusText:  in.Profile.StatusText,
+		RealName:           in.RealName,
+		Tz:                 in.TZ,
+	}
+}
+
+func APIToDBUsers(in []slack.User) []models.User {
+	out := make([]models.User, len(in))
+	for i := 0; i < len(in); i++ {
+		out[i] = APIToDBUser(in[i])
+	}
+	return out
+}
+
+// FetchUsers retrieves the initial set of users used to initialise the database
+func (a *App) FetchUsers() {
+	// TODO: should really wrap errors in here and return them to highest callsite
+	// TODO: we should use GetUsersPaginated for scalability
+	users, err := a.slackClient.GetUsers()
+	if err != nil {
+		log.Errorf("failed api call to slack GetUsers: %v", err)
+		return
+	}
+	log.Infof("retrieved %d users from GetUsers API", len(users))
+
+	dbUsers := APIToDBUsers(users)
+	err = a.db.CreateUsers(dbUsers)
+	if err != nil {
+		log.Errorf("failed db CreateUsers call: %v", err)
+		return
+	}
+	// TODO: more detailed log message
+	log.Infof("wrote %d users to DB", len(dbUsers))
 }

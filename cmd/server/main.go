@@ -75,6 +75,11 @@ func main() {
 		portNum = server.DefaultPortNum
 	}
 
+	slackAPIToken, exists := os.LookupEnv("SLACK_API_TOKEN")
+	if !exists {
+		log.Fatal("SLACK_API_TOKEN env var not set")
+	}
+
 	// set up database
 	dbStr := os.Getenv("DB_CONNECTION_STRING")
 	dbConn, err := WaitForDB(dbStr)
@@ -96,7 +101,7 @@ func main() {
 
 	// set up app
 	app := server.NewApp()
-	err = app.Init(portNum, postgres)
+	err = app.Init(portNum, postgres, slackAPIToken)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
