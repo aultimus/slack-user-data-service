@@ -46,6 +46,6 @@ func (p *Postgres) UpdateUser(user models.User) error {
 // may need pagination here
 func (p *Postgres) GetAllUsers() ([]models.User, error) {
 	var users []models.User
-	err := p.dbConn.Select(&users, "SELECT * FROM users")
+	err := p.dbConn.Select(&users, "SELECT * FROM users ORDER BY id")
 	return users, err
 }
