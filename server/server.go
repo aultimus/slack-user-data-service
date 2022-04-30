@@ -150,7 +150,7 @@ func APIToDBUser(in slack.User) models.User {
 		ProfileStatusEmoji: in.Profile.StatusEmoji,
 		ProfileStatusText:  in.Profile.StatusText,
 		RealName:           in.RealName,
-		Tz:                 in.TZ,
+		TZ:                 in.TZ,
 	}
 }
 

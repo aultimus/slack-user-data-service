@@ -8,7 +8,7 @@ type User struct {
 	ProfileStatusEmoji string `json:"status_emoji" db:"profile_status_emoji"`
 	ProfileStatusText  string `json:"status_text" db:"profile_status_text"`
 	RealName           string `json:"real_name" db:"real_name"`
-	Tz                 string `json:"tz" db:"tz"`
+	TZ                 string `json:"tz" db:"tz"`
 }
 
 // Event represents a slack event data type which is received by the webhooks

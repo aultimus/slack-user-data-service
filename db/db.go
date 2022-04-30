@@ -30,7 +30,7 @@ func (p *Postgres) CreateUsers(users []models.User) error {
 		// this is inefficient but is only run at app start
 		// TODO: optimise
 		_, err = p.dbConn.Exec(`INSERT INTO users VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (id) DO UPDATE SET name=$9, deleted=$10, real_name=$11, tz=$12, profile_status_text=$13, profile_status_emoji=$14, profile_image_512=$15`,
-			user.ID, user.Name, user.Deleted, user.RealName, user.Tz, user.ProfileStatusText, user.ProfileStatusEmoji, user.ProfileImage512, user.Name, user.Deleted, user.RealName, user.Tz, user.ProfileStatusText, user.ProfileStatusEmoji, user.ProfileImage512)
+			user.ID, user.Name, user.Deleted, user.RealName, user.TZ, user.ProfileStatusText, user.ProfileStatusEmoji, user.ProfileImage512, user.Name, user.Deleted, user.RealName, user.TZ, user.ProfileStatusText, user.ProfileStatusEmoji, user.ProfileImage512)
 		if err != nil {
 			return err
 		}
