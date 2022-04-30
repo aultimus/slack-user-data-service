@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math/rand"
 	"os"
 	"time"
 
@@ -27,7 +28,7 @@ func init() {
 		Level:     log.DEBUG,
 		Formatter: log.NewPatFormatter("[%D %T] [%L] %s %M"),
 	})
-
+	rand.Seed(time.Now().UnixNano())
 }
 
 func WaitForDB(dbConnStr string) (*sqlx.DB, error) {

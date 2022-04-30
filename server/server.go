@@ -1,8 +1,10 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"reflect"
 	"text/template"
@@ -61,7 +63,9 @@ func (a *App) Init(portNum string, storer Storer, slackAPIToken string) error {
 
 	// TODO: make debug toggleable when starting server
 	a.slackClient = slack.New(slackAPIToken, slack.OptionDebug(true))
-	a.FetchUsers()
+
+	// run asynchronously so we can still serve requests if api is down
+	go a.FetchUsersLoop()
 
 	return nil
 }
@@ -162,23 +166,40 @@ func APIToDBUsers(in []slack.User) []models.User {
 	return out
 }
 
+// fetchUsersLoop initialises the database with users fetched from the slack api
+// and keeps retrying upon errors, call this in a goroutine so it does not block
+func (a *App) FetchUsersLoop() {
+	for {
+		// TODO: make this timeout configurable
+		ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+		err := a.FetchUsers(ctx)
+		if err == nil {
+			return
+		}
+		log.Errorf(err.Error())
+		// it would be nicer to have more sophisticated backoff strategy but
+		// really only need if we have lots of clients developing into a
+		//thundering herd
+		// TODO: make this timeout configurable
+		time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
+	}
+}
+
 // FetchUsers retrieves the initial set of users used to initialise the database
-func (a *App) FetchUsers() {
-	// TODO: should really wrap errors in here and return them to highest callsite
-	// TODO: we should use GetUsersPaginated for scalability
-	users, err := a.slackClient.GetUsers()
+func (a *App) FetchUsers(ctx context.Context) error {
+	// GetUsersContext performs paginated requests
+	users, err := a.slackClient.GetUsersContext(ctx)
 	if err != nil {
-		log.Errorf("failed api call to slack GetUsers: %v", err)
-		return
+		return fmt.Errorf("failed api call to slack GetUsers: %v", err)
 	}
 	log.Infof("retrieved %d users from GetUsers API", len(users))
 
 	dbUsers := APIToDBUsers(users)
 	err = a.db.CreateUsers(dbUsers)
 	if err != nil {
-		log.Errorf("failed db CreateUsers call: %v", err)
-		return
+		return fmt.Errorf("failed db CreateUsers call: %v", err)
 	}
 	// TODO: more detailed log message
 	log.Infof("wrote %d users to DB", len(dbUsers))
+	return nil
 }
