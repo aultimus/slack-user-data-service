@@ -93,7 +93,6 @@ func (a *App) UsersHandler(w http.ResponseWriter, req *http.Request) {
 		Users []db.User
 	}{Users: users}
 
-	// it may make sense to have a user facing User struct definition at some point
 	tmpl, _ := template.ParseFiles("./html/users.html")
 	tmpl.Execute(w, usersStruct)
 }
