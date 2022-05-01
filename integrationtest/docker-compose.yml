@@ -3,7 +3,7 @@ services:
   postgres:
     build:
       context: ..
-      dockerfile: postgres.Dockerfile
+      dockerfile: integrationtestpostgres.Dockerfile
     ports:
     - 5432:5432 # expose for debugging
     environment:
