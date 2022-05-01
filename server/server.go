@@ -173,11 +173,11 @@ func (a *App) FetchUsersLoop() {
 			return
 		}
 		log.Errorf(err.Error())
-		// it would be nicer to have more sophisticated backoff strategy but
-		// really only need if we have lots of clients developing into a
-		//thundering herd
-		// TODO: make this timeout configurable
-		time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
+		// it would be nicer to have more sophisticated backoff strategy e.g. but
+		// exponential backoff with randomness but we really only need that if
+		// we have lots of clients developing into a thundering herd
+		// TODO: make this duration configurable
+		time.Sleep(time.Second + time.Duration(rand.Intn(1000))*time.Millisecond)
 	}
 }
 
