@@ -13,4 +13,4 @@ run:
 	docker-compose up --build
 
 integrationtest:
-	./integration-test.sh
+	docker-compose -f integrationtest/docker-compose.yml up --build --exit-code-from integrationtest

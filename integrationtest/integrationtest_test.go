@@ -1,6 +1,7 @@
 package integrationtest
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/slack-go/slack"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -271,6 +273,11 @@ var usersListJSON = `
     }
 }`
 
+type UsersResponse struct {
+	Members []slack.User `json:"members"`
+	ok      bool         `json:"ok"`
+}
+
 // This is written as one test as multiple go tests are known to run concurrently
 // which can make testing against a single server difficult / unpredictable
 func TestIntegration(t *testing.T) {
@@ -296,12 +303,25 @@ func TestIntegration(t *testing.T) {
 
 	waitChannel := make(chan struct{}, 1)
 
-	// TODO: generate data at runtime
+	// TODO: randomly generate data at runtime
+	userResponse := UsersResponse{
+		Members: []slack.User{
+			{ID: "user1", Name: "Bob the Builder", Deleted: false},
+			{ID: "user3", Name: "Rafael the Ninja Turtle", Deleted: false},
+			{ID: "user2", Name: "Ash Ketchum", Deleted: false},
+			{ID: "user2", Name: "Dora the Deleted", Deleted: true},
+			{ID: "user2", Name: "Jane", Deleted: false},
+		},
+	}
 
 	// usersListHandler mocks the slack api
 	usersListHandler := func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(usersListJSON))
+		b, err := json.Marshal(userResponse)
+		if err != nil {
+			a.FailNow("failed to marshal response: ", err.Error())
+		}
+		w.Write(b)
 		waitChannel <- struct{}{}
 	}
 
