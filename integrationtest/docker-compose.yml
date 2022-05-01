@@ -35,3 +35,5 @@ services:
     depends_on:
       - postgres
       - app
+    environment:
+      DB_CONNECTION_STRING: "host=postgres port=5432 dbname=postgres user=postgres sslmode=disable"

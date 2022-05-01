@@ -6,13 +6,30 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"sort"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/PuerkitoBio/goquery"
+	log "github.com/cocoonlife/timber"
 	"github.com/gorilla/mux"
+	"github.com/jmoiron/sqlx"
 	"github.com/slack-go/slack"
 	"github.com/stretchr/testify/assert"
+	"github.com/workos-code-challenge/matthew-ault/bin/util"
+
+	_ "github.com/lib/pq"
 )
+
+func init() {
+	log.AddLogger(log.ConfigLogger{
+		LogWriter: new(log.ConsoleWriter),
+		Level:     log.DEBUG,
+		Formatter: log.NewPatFormatter("[%D %T] [%L] %s %M"),
+	})
+}
 
 // captured via running 'curl -X POST -H "Authorization: Bearer $SLACK_API_TOKEN" https://slack.com/api/users.list'
 // TODO: use more interesting users than the ones already in the db
@@ -278,6 +295,60 @@ type UsersResponse struct {
 	ok      bool         `json:"ok"`
 }
 
+func wipeDatabase(dbConn *sqlx.DB) error {
+	_, err := dbConn.Exec("DELETE FROM users")
+	return err
+}
+
+func strToBool(s string) bool {
+	if s == "true" {
+		return true
+	}
+	return false
+}
+
+// this code is very brittle
+func parseHTML(data string) ([]slack.User, error) {
+	var out []slack.User
+
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(data))
+	if err != nil {
+		return out, err
+	}
+
+	var headings, row []string
+	var rows [][]string
+	firstRow := true
+
+	// Find each table
+	doc.Find("table").Each(func(index int, tablehtml *goquery.Selection) {
+		tablehtml.Find("tr").Each(func(indextr int, rowhtml *goquery.Selection) {
+			rowhtml.Find("th").Each(func(indexth int, tableheading *goquery.Selection) {
+				headings = append(headings, tableheading.Text())
+			})
+			rowhtml.Find("td").Each(func(indexth int, tablecell *goquery.Selection) {
+				row = append(row, tablecell.Text())
+			})
+			rows = append(rows, row)
+			if !firstRow { // first row is headers
+				out = append(out, slack.User{ID: row[0], Name: row[1],
+					Deleted: strToBool(row[2]), RealName: row[3], TZ: row[4],
+					Profile: slack.UserProfile{
+						StatusText:  row[5],
+						StatusEmoji: row[6],
+						Image512:    row[7],
+					},
+				})
+			}
+			firstRow = false
+			row = nil
+		})
+	})
+	// we might want to use heading values at some point in future
+	//fmt.Println("####### headings = ", len(headings), headings)
+	return out, nil
+}
+
 // This is written as one test as multiple go tests are known to run concurrently
 // which can make testing against a single server difficult / unpredictable
 func TestIntegration(t *testing.T) {
@@ -285,7 +356,32 @@ func TestIntegration(t *testing.T) {
 
 	fmt.Println("integration test started")
 	a := assert.New(t)
-	a.True(true)
+
+	// set up db
+	dbStr := os.Getenv("DB_CONNECTION_STRING")
+	dbConn, err := util.WaitForDB(dbStr)
+	if err != nil {
+		a.FailNow(err.Error())
+	}
+	defer dbConn.Close()
+
+	err = dbConn.Ping()
+	if err != nil {
+		log.Errorf("failed to connect to db:" + err.Error())
+	}
+
+	err = wipeDatabase(dbConn)
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		wipeDatabase(dbConn)
+		if err != nil {
+			log.Error(err)
+		}
+
+	}()
 
 	// TODO sanity check db connection?
 
@@ -304,13 +400,15 @@ func TestIntegration(t *testing.T) {
 	waitChannel := make(chan struct{}, 1)
 
 	// TODO: randomly generate data at runtime
+	// TODO: Test with a lot of users - maybe 1000?
 	userResponse := UsersResponse{
 		Members: []slack.User{
-			{ID: "user1", Name: "Bob the Builder", Deleted: false},
-			{ID: "user3", Name: "Rafael the Ninja Turtle", Deleted: false},
-			{ID: "user2", Name: "Ash Ketchum", Deleted: false},
-			{ID: "user2", Name: "Dora the Deleted", Deleted: true},
-			{ID: "user2", Name: "Jane", Deleted: false},
+			{ID: "user1", Name: "Bob the Builder", Deleted: false, RealName: "Bob Humphries"},
+			{ID: "user3", Name: "Rafael the Ninja Turtle", Deleted: false, RealName: "Rafael Tortuga",
+				Profile: slack.UserProfile{StatusText: "eating pizza", StatusEmoji: ":pizza:", Image512: "http://somesite/turtle.png"}},
+			{ID: "user2", Name: "Ash Ketchum", Deleted: false, RealName: "Ash Ketchum"},
+			{ID: "user4", Name: "Dora the Deleted", Deleted: true, RealName: "Dora Dorries"},
+			{ID: "user5", Name: "Jane", Deleted: false, RealName: "Jane Adams"},
 		},
 	}
 
@@ -344,7 +442,7 @@ func TestIntegration(t *testing.T) {
 
 	// check server has correct information
 	httpClient := http.Client{
-		Timeout: 5 * time.Second,
+		Timeout: 2 * time.Second,
 	}
 	resp, err := httpClient.Get("http://app:3000/users")
 	if err != nil {
@@ -352,8 +450,21 @@ func TestIntegration(t *testing.T) {
 	}
 	defer resp.Body.Close()
 
+	expected := userResponse.Members[:]
+
+	sort.Slice(expected, func(i, j int) bool {
+		return expected[i].ID < expected[j].ID
+	})
+	// this code relies upon column ordering but we could parse headers out
+
 	b, err := io.ReadAll(resp.Body)
 	fmt.Println(string(b))
+	actual, err := parseHTML(string(b))
+	if err != nil {
+		a.FailNow(err.Error())
+	}
+
+	a.Equal(expected, actual)
 
 	// TODO: send event to the webhooks endpoint to update user
 	// TODO: request html form, parse html form to check results are correct

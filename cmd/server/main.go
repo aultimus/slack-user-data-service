@@ -5,15 +5,14 @@ import (
 	"os"
 	"time"
 
-	"github.com/go-playground/errors"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
 	"github.com/slack-go/slack"
 
 	"flag"
 
 	"github.com/cocoonlife/timber"
 	log "github.com/cocoonlife/timber"
+	"github.com/workos-code-challenge/matthew-ault/bin/util"
 	"github.com/workos-code-challenge/matthew-ault/db"
 	"github.com/workos-code-challenge/matthew-ault/server"
 
@@ -30,41 +29,6 @@ func init() {
 		Formatter: log.NewPatFormatter("[%D %T] [%L] %s %M"),
 	})
 	rand.Seed(time.Now().UnixNano())
-}
-
-func WaitForDB(dbConnStr string) (*sqlx.DB, error) {
-	maxRetries := 10
-	var handle *sqlx.DB
-	var err error
-
-	for i := 0; i < maxRetries; i++ {
-		handle, err = sqlx.Connect("postgres", dbConnStr)
-		if err != nil {
-			if i < maxRetries-1 {
-				log.Infof("sleeping for db connect")
-				time.Sleep(time.Second)
-				continue
-			}
-			return nil, err
-		}
-		break
-	}
-	log.Infof("connected to db")
-
-	// if db is spinning up, let's be fault tolerant and try a few times
-	for i := 0; i < maxRetries; i++ {
-		if err = handle.Ping(); err != nil {
-			if i < maxRetries-1 {
-				log.Infof("sleeping for db ping")
-				time.Sleep(time.Second)
-				continue
-			}
-			return nil, err
-		}
-		break
-	}
-	log.Infof("pinged db")
-	return handle, nil
 }
 
 func main() {
@@ -89,15 +53,15 @@ func main() {
 
 	// set up database
 	dbStr := os.Getenv("DB_CONNECTION_STRING")
-	dbConn, err := WaitForDB(dbStr)
+	dbConn, err := util.WaitForDB(dbStr)
 	if err != nil {
-		timber.Fatal(errors.Wrap(err, "failed to connect to database").AddTag("connection_string", dbStr))
+		timber.Fatal("failed to connect to database" + err.Error())
 	}
 	defer dbConn.Close()
 
 	err = dbConn.Ping()
 	if err != nil {
-		timber.Fatal(errors.Wrap(err, "failed to connect to db"))
+		timber.Fatal(err)
 	}
 	postgres := db.NewPostgres(dbConn)
 
