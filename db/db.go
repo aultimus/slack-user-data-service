@@ -2,8 +2,19 @@ package db
 
 import (
 	"github.com/jmoiron/sqlx"
-	"github.com/workos-code-challenge/matthew-ault/models"
 )
+
+// User is the database representation of a user
+type User struct {
+	Deleted            bool   `json:"deleted" db:"deleted"`
+	ID                 string `json:"id" db:"id"`
+	Name               string `json:"name" db:"name"`
+	ProfileImage512    string `json:"image_512" db:"profile_image_512"`
+	ProfileStatusEmoji string `json:"status_emoji" db:"profile_status_emoji"`
+	ProfileStatusText  string `json:"status_text" db:"profile_status_text"`
+	RealName           string `json:"real_name" db:"real_name"`
+	TZ                 string `json:"tz" db:"tz"`
+}
 
 func NewPostgres(dbConn *sqlx.DB) *Postgres {
 	return &Postgres{dbConn: dbConn}
@@ -16,12 +27,12 @@ type Postgres struct {
 
 // id, name, deleted, real_name, tz, profile_status_text, profile_status_emoji, profile_image_512
 
-func (p *Postgres) CreateUser(user models.User) error {
+func (p *Postgres) CreateUser(user User) error {
 	_, err := p.dbConn.NamedExec(`INSERT INTO users (id, name, deleted, real_name, tz, profile_status_text, profile_status_emoji, profile_image_512) VALUES (:id, :name, :deleted, :real_name, :tz, :profile_status_text, :profile_status_emoji, :profile_image_512)`, user)
 	return err
 }
 
-func (p *Postgres) CreateUsers(users []models.User) error {
+func (p *Postgres) CreateUsers(users []User) error {
 	// Want to do an upsert as if the service has been down the db may be stale
 	// ON CONFLICT does not seem to work with sqlx namedexec
 	//_, err := p.dbConn.NamedExec(`INSERT INTO users (id, name, deleted, real_name, tz, profile_status_text, profile_status_emoji, profile_image_512) VALUES (:id, :name, :deleted, :real_name, :tz, :profile_status_text, :profile_status_emoji, :profile_image_512) ON CONFLICT (id) DO UPDATE SET name=:name, deleted=:deleted, real_name=:real_name, tz=:tz, profile_status_text=:profile_status_text, profile_status_emoji=:profile_status_emoji, profile_image_512=:profile_image_512`, users)
@@ -38,14 +49,14 @@ func (p *Postgres) CreateUsers(users []models.User) error {
 	return nil
 }
 
-func (p *Postgres) UpdateUser(user models.User) error {
+func (p *Postgres) UpdateUser(user User) error {
 	_, err := p.dbConn.NamedExec(`UPDATE users SET name=:name, deleted=:deleted, real_name=:real_name, tz=:tz, profile_status_text=:profile_status_text, profile_status_emoji=:profile_status_emoji, profile_image_512=:profile_image_512 WHERE id=:id`, user)
 	return err
 }
 
 // may need pagination here
-func (p *Postgres) GetAllUsers() ([]models.User, error) {
-	var users []models.User
+func (p *Postgres) GetAllUsers() ([]User, error) {
+	var users []User
 	err := p.dbConn.Select(&users, "SELECT * FROM users ORDER BY id")
 	return users, err
 }

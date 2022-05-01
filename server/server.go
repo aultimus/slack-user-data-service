@@ -15,7 +15,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
-	"github.com/workos-code-challenge/matthew-ault/models"
+	"github.com/workos-code-challenge/matthew-ault/db"
 )
 
 const (
@@ -29,10 +29,10 @@ func NewApp() *App {
 }
 
 type Storer interface {
-	CreateUser(user models.User) error
-	CreateUsers(user []models.User) error
-	UpdateUser(user models.User) error
-	GetAllUsers() ([]models.User, error)
+	CreateUser(user db.User) error
+	CreateUsers(user []db.User) error
+	UpdateUser(user db.User) error
+	GetAllUsers() ([]db.User, error)
 }
 
 type Slacker interface {
@@ -90,7 +90,7 @@ func (a *App) UsersHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	usersStruct := struct {
-		Users []models.User
+		Users []db.User
 	}{Users: users}
 
 	// it may make sense to have a user facing User struct definition at some point
@@ -138,11 +138,11 @@ func (a *App) WebhooksHandler(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func APIToDBUser(in slack.User) models.User {
+func APIToDBUser(in slack.User) db.User {
 	// we could either implement this function via marshalling and unmarshalling
 	// or via mapping. marshalling and unmarshalling is more extensible
 	// but less can go wrong with a mapping function like this
-	return models.User{
+	return db.User{
 		Deleted:            in.Deleted,
 		ID:                 in.ID,
 		Name:               in.Name,
@@ -154,8 +154,8 @@ func APIToDBUser(in slack.User) models.User {
 	}
 }
 
-func APIToDBUsers(in []slack.User) []models.User {
-	out := make([]models.User, len(in))
+func APIToDBUsers(in []slack.User) []db.User {
+	out := make([]db.User, len(in))
 	for i := 0; i < len(in); i++ {
 		out[i] = APIToDBUser(in[i])
 	}
