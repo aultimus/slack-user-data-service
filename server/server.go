@@ -99,7 +99,6 @@ func (a *App) UsersHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func (a *App) WebhooksHandler(w http.ResponseWriter, req *http.Request) {
-
 	b, err := io.ReadAll(req.Body)
 	if err != nil {
 		log.Errorf("failed to parse slack event body: %v", err)
@@ -119,19 +118,19 @@ func (a *App) WebhooksHandler(w http.ResponseWriter, req *http.Request) {
 	case "user_change":
 		// https://api.slack.com/events/user_change
 		log.Debugf("processing %s event", event.InnerEvent.Type)
-		switch event.InnerEvent.Data.(type) {
-		case *slack.UserChangeEvent:
-			//fmt.Println(string(b))
-			//spew.Dump(event)
-			apiUser := event.InnerEvent.Data.(*slack.UserChangeEvent).User
-			dbUser := APIToDBUser(apiUser)
-			err = a.db.UpdateUser(dbUser)
-			if err != nil {
-				log.Errorf("error during UpdateUser: %s, user: %s", err.Error(), spew.Sdump(dbUser))
-				return
-			}
-		default: // something went horribly wrong
+		userChangeEvent, ok := event.InnerEvent.Data.(*slack.UserChangeEvent)
+		if !ok {
 			log.Errorf("user_change event has inner data of type %v ", reflect.TypeOf(event.InnerEvent.Data))
+			return
+		}
+		//fmt.Println(string(b))
+		//spew.Dump(event)
+		apiUser := userChangeEvent.User
+		dbUser := APIToDBUser(apiUser)
+		err = a.db.UpdateUser(dbUser)
+		if err != nil {
+			log.Errorf("error during UpdateUser: %s, user: %s", err.Error(), spew.Sdump(dbUser))
+			return
 		}
 	default: // unregonised event type
 		log.Debugf("ignoring event of event type %s", event.InnerEvent.Type)
