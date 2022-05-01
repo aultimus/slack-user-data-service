@@ -27,9 +27,10 @@ DB code becomes too much of a burden, as it stands sqlx saves a bunch of legwork
 API. The slack library provides us with some predefined types and adds some nice
 features such as out of the box pagination and verification. It does add some
 complexity into the code in that we need to deal with more types and cannot simply
-treat the slack response as raw json but hopefully it provides safety in its stead.
-It would also be much easier to write integration tests using a mock slack server
-if we had the finer grained control that using the REST API would provide.
+treat the slack response as raw json but hopefully it provides safety in its stead
+and reliability in the face of any api changes. It would be easier to
+write integration tests using a mock slack server if we had the finer grained
+control that using the REST API would provide.
 
 ## Notes
 Slack codechallenge app has these permissions:
@@ -43,3 +44,4 @@ Slack codechallenge app has these permissions:
 * SQLX provides a connection pool for us
 
 ## TODO
+* Test deactivating / deleting user

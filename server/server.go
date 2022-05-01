@@ -45,22 +45,22 @@ type App struct {
 	slackClient Slacker
 }
 
+// Init initialises the application server, call before Run
 func (a *App) Init(portNum string, storer Storer, slackClient Slacker) error {
 	log.Infof("init")
 	router := mux.NewRouter()
 
 	server := &http.Server{
-		Addr:           ":" + portNum,
-		Handler:        router,
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
-		IdleTimeout:    10 * time.Second,
-		MaxHeaderBytes: 1 << 20,
+		Addr:         ":" + portNum,
+		Handler:      router,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  120 * time.Second,
 	}
 
 	router.HandleFunc("/", a.RootHandler)
 	router.HandleFunc("/users", a.UsersHandler).Methods(http.MethodGet)
-	router.HandleFunc("/webhooks", a.WebhooksHandler)
+	router.HandleFunc("/webhooks", a.WebhooksHandler).Methods(http.MethodPost)
 
 	a.server = server
 	a.db = storer
@@ -74,6 +74,7 @@ func (a *App) Init(portNum string, storer Storer, slackClient Slacker) error {
 
 // TODO: do something with long running requests and use context
 
+// Run starts the application server, call Init first
 func (a *App) Run() error {
 	log.Infof("running server on %s", a.server.Addr)
 	return a.server.ListenAndServe()
@@ -83,6 +84,7 @@ func (a *App) RootHandler(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintln(w, "Hello world today!")
 }
 
+// UsersHandler on request renders a html table of users stored by this service
 func (a *App) UsersHandler(w http.ResponseWriter, req *http.Request) {
 	users, err := a.db.GetAllUsers()
 	if err != nil {
@@ -97,6 +99,8 @@ func (a *App) UsersHandler(w http.ResponseWriter, req *http.Request) {
 	tmpl.Execute(w, usersStruct)
 }
 
+// WebhooksHandler processes events from the slack events api
+// https://api.slack.com/apis/connections/events-api
 func (a *App) WebhooksHandler(w http.ResponseWriter, req *http.Request) {
 	b, err := io.ReadAll(req.Body)
 	if err != nil {
@@ -131,7 +135,11 @@ func (a *App) WebhooksHandler(w http.ResponseWriter, req *http.Request) {
 			log.Errorf("error during UpdateUser: %s, user: %s", err.Error(), spew.Sdump(dbUser))
 			return
 		}
+
 	default: // unregonised event type
+		// should we also respond to url_verification events? Seems important when
+		// setting up service but maybe uneccesary now webhooks endpoint is setup
+		// https://api.slack.com/events/url_verification
 		log.Debugf("ignoring event of event type %s", event.InnerEvent.Type)
 	}
 }
