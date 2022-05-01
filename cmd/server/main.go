@@ -82,6 +82,11 @@ func main() {
 		log.Fatal("SLACK_API_TOKEN env var not set")
 	}
 
+	slackAPIURL := os.Getenv("SLACK_API_URL")
+	if slackAPIURL == "" {
+		slackAPIURL = slack.APIURL
+	}
+
 	// set up database
 	dbStr := os.Getenv("DB_CONNECTION_STRING")
 	dbConn, err := WaitForDB(dbStr)
@@ -101,9 +106,10 @@ func main() {
 		log.Errorf(http.ListenAndServe(":6060", nil))
 	}()
 
+	log.Infof("using slack api url %s", slackAPIURL)
 	// TODO: make debug toggleable when starting server
 	slackClient := slack.New(slackAPIToken, slack.OptionDebug(true))
-
+	slack.OptionAPIURL(slackAPIURL)(slackClient)
 	// set up app
 	app := server.NewApp()
 

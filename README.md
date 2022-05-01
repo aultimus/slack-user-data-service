@@ -28,9 +28,7 @@ API. The slack library provides us with some predefined types and adds some nice
 features such as out of the box pagination and verification. It does add some
 complexity into the code in that we need to deal with more types and cannot simply
 treat the slack response as raw json but hopefully it provides safety in its stead
-and reliability in the face of any api changes. It would be easier to
-write integration tests using a mock slack server if we had the finer grained
-control that using the REST API would provide.
+and reliability in the face of any api changes.
 
 ## Notes
 Slack codechallenge app has these permissions:

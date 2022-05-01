@@ -1,3 +1,5 @@
+.PHONY: integrationtest
+
 ngrok:
 	ngrok start interview --config ngrok.yml
 
@@ -9,3 +11,6 @@ down:
 
 run:
 	docker-compose up --build
+
+integrationtest:
+	docker-compose --file integration-test-docker-compose.yml up --build

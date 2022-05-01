@@ -1,0 +1,37 @@
+version: '3'
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: postgres.Dockerfile
+    ports:
+    - 5432:5432 # expose for debugging
+    environment:
+     POSTGRES_HOST_AUTH_METHOD: trust # todo use proper auth
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+  app:
+    build:
+      context: .
+    expose:
+    - "3000"
+    ports:
+     - "3000:3000"
+    depends_on:
+      - postgres
+    env_file:
+      - ./dev.env
+    environment:
+      DB_CONNECTION_STRING: "host=postgres port=5432 dbname=postgres user=postgres sslmode=disable"
+      SLACK_API_URL: "http://integrationtest:8081/"
+  integrationtest:
+    build:
+      context: .
+      dockerfile: integrationtest.Dockerfile
+    depends_on:
+      - postgres
+      - app
