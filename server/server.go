@@ -107,12 +107,6 @@ func (a *App) WebhooksHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	defer req.Body.Close()
 
-	//var eventObj models.Event
-	//err = json.Unmarshal(b, &eventObj)
-	//if err != nil {
-	//	log.Errorf("error unmarshalling json: %v", err)
-	//	return
-	//}
 	// TODO: use verification
 	event, err := slackevents.ParseEvent(b, slackevents.OptionNoVerifyToken())
 	if err != nil {
