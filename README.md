@@ -15,8 +15,13 @@ In order to run in development mode execute:
 This will spin up the app and an accompanying database via docker-compose.
 
 ## Testing
-In order to run the tests execute:
-TODO
+In order to run the integration tests execute:
+`make integrationtest`
+This command will return a positive exit code if the tests fail so is easily
+usable in CI. The integration tests runs a server to mock the slack api, sends
+the app events and makes requests to the app endpoint to verify behaviour.
+
+TODO unit tests
 
 ## Tradeoffs
 * To use an ORM or not to use an ORM? I considered using an ORM but have not

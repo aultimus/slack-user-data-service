@@ -2,7 +2,7 @@ version: '3'
 services:
   postgres:
     build:
-      context: .
+      context: ..
       dockerfile: postgres.Dockerfile
     ports:
     - 5432:5432 # expose for debugging
@@ -16,7 +16,7 @@ services:
       - 8080:8080
   app:
     build:
-      context: .
+      context: ..
     expose:
     - "3000"
     ports:
@@ -24,13 +24,13 @@ services:
     depends_on:
       - postgres
     env_file:
-      - ./dev.env
+      - ../dev.env
     environment:
       DB_CONNECTION_STRING: "host=postgres port=5432 dbname=postgres user=postgres sslmode=disable"
       SLACK_API_URL: "http://integrationtest:8081/"
   integrationtest:
     build:
-      context: .
+      context: ..
       dockerfile: integrationtest.Dockerfile
     depends_on:
       - postgres

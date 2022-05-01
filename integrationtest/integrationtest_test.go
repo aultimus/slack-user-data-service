@@ -3,6 +3,7 @@ package integrationtest
 import (
 	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -20,7 +21,7 @@ var usersListJSON = `
         {
             "color": "757575",
             "deleted": false,
-            "id": "USLACKBOT",
+            "id": "user1",
             "is_admin": false,
             "is_app_user": false,
             "is_bot": false,
@@ -29,24 +30,24 @@ var usersListJSON = `
             "is_primary_owner": false,
             "is_restricted": false,
             "is_ultra_restricted": false,
-            "name": "slackbot",
+            "name": "benderbends@gmail.com",
             "profile": {
                 "always_active": true,
                 "avatar_hash": "sv41d8cd98f0",
-                "display_name": "Slackbot",
-                "display_name_normalized": "Slackbot",
+                "display_name": "Bender",
+                "display_name_normalized": "Bender",
                 "fields": null,
-                "first_name": "slackbot",
+                "first_name": "Bender",
                 "image_192": "https://a.slack-edge.com/80588/marketing/img/avatars/slackbot/avatar-slackbot.png",
                 "image_24": "https://a.slack-edge.com/80588/img/slackbot_24.png",
                 "image_32": "https://a.slack-edge.com/80588/img/slackbot_32.png",
                 "image_48": "https://a.slack-edge.com/80588/img/slackbot_48.png",
                 "image_512": "https://a.slack-edge.com/80588/img/slackbot_512.png",
                 "image_72": "https://a.slack-edge.com/80588/img/slackbot_72.png",
-                "last_name": "",
+                "last_name": "the Robot",
                 "phone": "",
-                "real_name": "Slackbot",
-                "real_name_normalized": "Slackbot",
+                "real_name": "Bender",
+                "real_name_normalized": "Bender",
                 "skype": "",
                 "status_emoji": "",
                 "status_emoji_display_info": [],
@@ -56,7 +57,7 @@ var usersListJSON = `
                 "team": "T03D3SWA4DA",
                 "title": ""
             },
-            "real_name": "Slackbot",
+            "real_name": "Bender",
             "team_id": "T03D3SWA4DA",
             "tz": "America/Los_Angeles",
             "tz_label": "Pacific Daylight Time",
@@ -68,7 +69,7 @@ var usersListJSON = `
             "color": "9f69e7",
             "deleted": false,
             "has_2fa": false,
-            "id": "U03DE5PR65P",
+            "id": "user3",
             "is_admin": true,
             "is_app_user": false,
             "is_bot": false,
@@ -77,24 +78,24 @@ var usersListJSON = `
             "is_primary_owner": true,
             "is_restricted": false,
             "is_ultra_restricted": false,
-            "name": "challenge-onsite",
+            "name": "rafael the turtle",
             "profile": {
                 "avatar_hash": "g423be4b81b8",
                 "display_name": "",
                 "display_name_normalized": "",
-                "email": "challenge-onsite@workos.com",
+                "email": "ilovepizza@gmail.com",
                 "fields": null,
-                "first_name": "WorkOS",
+                "first_name": "Rafael",
                 "image_192": "https://secure.gravatar.com/avatar/423be4b81b880abaf7a4f5b3ebbe9c13.jpg?s=192&d=https%3A%2F%2Fa.slack-edge.com%2Fdf10d%2Fimg%2Favatars%2Fava_0023-192.png",
                 "image_24": "https://secure.gravatar.com/avatar/423be4b81b880abaf7a4f5b3ebbe9c13.jpg?s=24&d=https%3A%2F%2Fa.slack-edge.com%2Fdf10d%2Fimg%2Favatars%2Fava_0023-24.png",
                 "image_32": "https://secure.gravatar.com/avatar/423be4b81b880abaf7a4f5b3ebbe9c13.jpg?s=32&d=https%3A%2F%2Fa.slack-edge.com%2Fdf10d%2Fimg%2Favatars%2Fava_0023-32.png",
                 "image_48": "https://secure.gravatar.com/avatar/423be4b81b880abaf7a4f5b3ebbe9c13.jpg?s=48&d=https%3A%2F%2Fa.slack-edge.com%2Fdf10d%2Fimg%2Favatars%2Fava_0023-48.png",
                 "image_512": "https://secure.gravatar.com/avatar/423be4b81b880abaf7a4f5b3ebbe9c13.jpg?s=512&d=https%3A%2F%2Fa.slack-edge.com%2Fdf10d%2Fimg%2Favatars%2Fava_0023-512.png",
                 "image_72": "https://secure.gravatar.com/avatar/423be4b81b880abaf7a4f5b3ebbe9c13.jpg?s=72&d=https%3A%2F%2Fa.slack-edge.com%2Fdf10d%2Fimg%2Favatars%2Fava_0023-72.png",
-                "last_name": "",
+                "last_name": "the Turtle",
                 "phone": "",
-                "real_name": "WorkOS",
-                "real_name_normalized": "WorkOS",
+                "real_name": "Rafael",
+                "real_name_normalized": "Rafael",
                 "skype": "",
                 "status_emoji": "",
                 "status_emoji_display_info": [],
@@ -116,7 +117,7 @@ var usersListJSON = `
             "color": "e7392d",
             "deleted": false,
             "has_2fa": false,
-            "id": "U03DEQ55EHZ",
+            "id": "user2",
             "is_admin": false,
             "is_app_user": false,
             "is_bot": false,
@@ -125,14 +126,14 @@ var usersListJSON = `
             "is_primary_owner": false,
             "is_restricted": false,
             "is_ultra_restricted": false,
-            "name": "matthew.ault.backup",
+            "name": "joe.bloggs",
             "profile": {
                 "avatar_hash": "9d52980a0dca",
-                "display_name": "Matthew Ault",
-                "display_name_normalized": "Matthew Ault",
-                "email": "matthew.ault.backup@gmail.com",
+                "display_name": "Joe Bloggs",
+                "display_name_normalized": "Joe Bloggs",
+                "email": "joe.bloggs.backup@gmail.com",
                 "fields": null,
-                "first_name": "Matthew",
+                "first_name": "Joe",
                 "image_1024": "https://avatars.slack-edge.com/2022-04-28/3480574803088_9d52980a0dcaeb2176e4_1024.png",
                 "image_192": "https://avatars.slack-edge.com/2022-04-28/3480574803088_9d52980a0dcaeb2176e4_192.png",
                 "image_24": "https://avatars.slack-edge.com/2022-04-28/3480574803088_9d52980a0dcaeb2176e4_24.png",
@@ -142,10 +143,10 @@ var usersListJSON = `
                 "image_72": "https://avatars.slack-edge.com/2022-04-28/3480574803088_9d52980a0dcaeb2176e4_72.png",
                 "image_original": "https://avatars.slack-edge.com/2022-04-28/3480574803088_9d52980a0dcaeb2176e4_original.png",
                 "is_custom_image": true,
-                "last_name": "Ault",
+                "last_name": "Bloggs",
                 "phone": "",
-                "real_name": "Matthew Ault",
-                "real_name_normalized": "Matthew Ault",
+                "real_name": "Joe Bloggs",
+                "real_name_normalized": "Joe Bloggs",
                 "skype": "",
                 "status_emoji": "",
                 "status_emoji_display_info": [],
@@ -155,7 +156,7 @@ var usersListJSON = `
                 "team": "T03D3SWA4DA",
                 "title": ""
             },
-            "real_name": "Matthew Ault",
+            "real_name": "Joe Bloggs",
             "team_id": "T03D3SWA4DA",
             "tz": "America/New_York",
             "tz_label": "Eastern Daylight Time",
@@ -167,7 +168,7 @@ var usersListJSON = `
             "color": "4bbe2e",
             "deleted": false,
             "has_2fa": false,
-            "id": "U03DR9SNFU0",
+            "id": "user4",
             "is_admin": true,
             "is_app_user": false,
             "is_bot": false,
@@ -179,11 +180,11 @@ var usersListJSON = `
             "name": "matthew.ault",
             "profile": {
                 "avatar_hash": "gd71bef6a870",
-                "display_name": "matt",
-                "display_name_normalized": "matt",
+                "display_name": "ash",
+                "display_name_normalized": "ash",
                 "email": "matthew.ault@gmail.com",
                 "fields": null,
-                "first_name": "Matthew",
+                "first_name": "Ash",
                 "huddle_state": "default_unset",
                 "image_192": "https://secure.gravatar.com/avatar/d71bef6a8706532e51bed9361a4ff3ce.jpg?s=192&d=https%3A%2F%2Fa.slack-edge.com%2Fdf10d%2Fimg%2Favatars%2Fava_0014-192.png",
                 "image_24": "https://secure.gravatar.com/avatar/d71bef6a8706532e51bed9361a4ff3ce.jpg?s=24&d=https%3A%2F%2Fa.slack-edge.com%2Fdf10d%2Fimg%2Favatars%2Fava_0014-24.png",
@@ -191,10 +192,10 @@ var usersListJSON = `
                 "image_48": "https://secure.gravatar.com/avatar/d71bef6a8706532e51bed9361a4ff3ce.jpg?s=48&d=https%3A%2F%2Fa.slack-edge.com%2Fdf10d%2Fimg%2Favatars%2Fava_0014-48.png",
                 "image_512": "https://secure.gravatar.com/avatar/d71bef6a8706532e51bed9361a4ff3ce.jpg?s=512&d=https%3A%2F%2Fa.slack-edge.com%2Fdf10d%2Fimg%2Favatars%2Fava_0014-512.png",
                 "image_72": "https://secure.gravatar.com/avatar/d71bef6a8706532e51bed9361a4ff3ce.jpg?s=72&d=https%3A%2F%2Fa.slack-edge.com%2Fdf10d%2Fimg%2Favatars%2Fava_0014-72.png",
-                "last_name": "Ault",
+                "last_name": "Ketchem",
                 "phone": "",
-                "real_name": "Matthew Ault",
-                "real_name_normalized": "Matthew Ault",
+                "real_name": "Ash Ketchem",
+                "real_name_normalized": "Ash Ketchem",
                 "skype": "",
                 "status_emoji": ":100:",
                 "status_emoji_display_info": [],
@@ -216,7 +217,7 @@ var usersListJSON = `
             "color": "3c989f",
             "deleted": false,
             "has_2fa": false,
-            "id": "U03E4HE66HE",
+            "id": "user5",
             "is_admin": false,
             "is_app_user": false,
             "is_bot": false,
@@ -228,11 +229,11 @@ var usersListJSON = `
             "name": "brandi.a.goulding",
             "profile": {
                 "avatar_hash": "79d3a67d6115",
-                "display_name": "Brandi Goulding",
-                "display_name_normalized": "Brandi Goulding",
+                "display_name": "Bob The Builder",
+                "display_name_normalized": "Bob The Builder",
                 "email": "brandi.a.goulding@gmail.com",
                 "fields": null,
-                "first_name": "Brandi",
+                "first_name": "Bobby",
                 "image_1024": "https://avatars.slack-edge.com/2022-04-28/3450197819382_79d3a67d61151da98221_1024.jpg",
                 "image_192": "https://avatars.slack-edge.com/2022-04-28/3450197819382_79d3a67d61151da98221_192.jpg",
                 "image_24": "https://avatars.slack-edge.com/2022-04-28/3450197819382_79d3a67d61151da98221_24.jpg",
@@ -242,10 +243,10 @@ var usersListJSON = `
                 "image_72": "https://avatars.slack-edge.com/2022-04-28/3450197819382_79d3a67d61151da98221_72.jpg",
                 "image_original": "https://avatars.slack-edge.com/2022-04-28/3450197819382_79d3a67d61151da98221_original.jpg",
                 "is_custom_image": true,
-                "last_name": "Goulding",
+                "last_name": "The Builder",
                 "phone": "",
-                "real_name": "Brandi Goulding",
-                "real_name_normalized": "Brandi Goulding",
+                "real_name": "Bob The Builder",
+                "real_name_normalized": "Bobby Builder",
                 "skype": "",
                 "status_emoji": "",
                 "status_emoji_display_info": [],
@@ -255,7 +256,7 @@ var usersListJSON = `
                 "team": "T03D3SWA4DA",
                 "title": ""
             },
-            "real_name": "Brandi Goulding",
+            "real_name": "Bob The Builder",
             "team_id": "T03D3SWA4DA",
             "tz": "America/New_York",
             "tz_label": "Eastern Daylight Time",
@@ -293,13 +294,46 @@ func TestIntegration(t *testing.T) {
 		IdleTimeout:  120 * time.Second,
 	}
 
+	waitChannel := make(chan struct{}, 1)
+
+	// TODO: generate data at runtime
+
+	// usersListHandler mocks the slack api
+	usersListHandler := func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(usersListJSON))
+		waitChannel <- struct{}{}
+	}
+
 	router.HandleFunc("/users.list", usersListHandler)
+
 	go func(server *http.Server) {
 		fmt.Println(server.ListenAndServe().Error())
 	}(server)
 
 	// wait until app has hit users.list to intialise users
-	time.Sleep(time.Hour)
+	select {
+	case <-time.After(time.Second * 20):
+		// call timed out
+		a.FailNow("timed out waiting for app to hit users.list endpoint")
+	case <-waitChannel:
+		fmt.Println("users.list hit")
+	}
+	// wait for server to update
+	time.Sleep(time.Second * 5)
+
+	// check server has correct information
+	httpClient := http.Client{
+		Timeout: 5 * time.Second,
+	}
+	resp, err := httpClient.Get("http://app:3000/users")
+	if err != nil {
+		a.FailNow(err.Error())
+	}
+	defer resp.Body.Close()
+
+	b, err := io.ReadAll(resp.Body)
+	fmt.Println(string(b))
 
 	// TODO: send event to the webhooks endpoint to update user
 	// TODO: request html form, parse html form to check results are correct
@@ -309,10 +343,4 @@ func TestIntegration(t *testing.T) {
 
 	// TODO: send event to the webhooks endpoint to update user
 	// TODO: request html form, parse html form to check results are correct
-}
-
-// usersListHandler mocks the slack api
-func usersListHandler(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(usersListJSON))
 }

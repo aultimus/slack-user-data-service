@@ -13,4 +13,4 @@ run:
 	docker-compose up --build
 
 integrationtest:
-	docker-compose --file integration-test-docker-compose.yml up --build
+	./integration-test.sh
