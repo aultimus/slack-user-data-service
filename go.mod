@@ -8,6 +8,8 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/go-playground/errors v3.3.0+incompatible
 	github.com/go-sql-driver/mysql v1.6.0
+	github.com/google/uuid v1.3.0 // indirect
+	github.com/goombaio/namegenerator v0.0.0-20181006234301-989e774b106e // indirect
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/jmoiron/sqlx v1.3.5

@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"os"
 	"sort"
@@ -15,6 +16,8 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	log "github.com/cocoonlife/timber"
+	"github.com/google/uuid"
+	"github.com/goombaio/namegenerator"
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 	"github.com/slack-go/slack"
@@ -134,6 +137,43 @@ func fetchUsers(httpClient *http.Client) ([]slack.User, error) {
 	return parseHTML(string(b))
 }
 
+func generateRandomUser(id string) slack.User {
+	if id == "" {
+		id = uuid.NewString()
+	}
+
+	seed := time.Now().UTC().UnixNano() // TODO: should only do this once
+	nameGenerator := namegenerator.NewNameGenerator(seed)
+	emojis := []string{":lol:", ":work:", ":smiling:", ":house:"}
+	statusTexts := []string{"out eating", "out exercising", "out shopping", "doing programming"}
+	timezones := []string{"EST", "PST", "BST", "GMT"}
+
+	name := nameGenerator.Generate()
+
+	randomNum := rand.Intn(2)
+	var deleted bool
+	if randomNum == 1 {
+		deleted = true
+	}
+
+	return slack.User{
+		ID:       id,
+		Name:     name,
+		RealName: name + " real",
+		Deleted:  deleted,
+		TZ:       timezones[rand.Intn(len(timezones))],
+		Profile: slack.UserProfile{
+			Image512:    "http://imgur.com/" + name + ".png",
+			StatusEmoji: emojis[rand.Intn(len(emojis))],
+			StatusText:  statusTexts[rand.Intn(len(statusTexts))],
+		},
+	}
+}
+
+func mutateUser(user *slack.User) slack.User {
+	return generateRandomUser(user.ID)
+}
+
 // This is written as one test as multiple go tests are known to run concurrently
 // which can make testing against a single server difficult / unpredictable
 func TestIntegration(t *testing.T) {
@@ -186,15 +226,14 @@ func TestIntegration(t *testing.T) {
 
 	// TODO: randomly generate data at runtime
 	// TODO: Test with a lot of users - maybe 1000?
+
+	numUsers := 1000
 	userResponse := UsersResponse{
-		Members: []slack.User{
-			{ID: "user1", Name: "Bob the Builder", Deleted: false, RealName: "Bob Humphries"},
-			{ID: "user3", Name: "Rafael the Ninja Turtle", Deleted: false, RealName: "Rafael Tortuga",
-				Profile: slack.UserProfile{StatusText: "eating pizza", StatusEmoji: ":pizza:", Image512: "http://somesite/turtle.png"}},
-			{ID: "user2", Name: "Ash Ketchum", Deleted: false, RealName: "Ash Ketchum"},
-			{ID: "user4", Name: "Dora the Deleted", Deleted: true, RealName: "Dora Dorries"},
-			{ID: "user5", Name: "Jane", Deleted: false, RealName: "Jane Adams"},
-		},
+		Members: make([]slack.User, numUsers),
+	}
+
+	for i := 0; i < numUsers; i++ {
+		userResponse.Members[i] = generateRandomUser("")
 	}
 
 	// usersListHandler mocks the slack api
