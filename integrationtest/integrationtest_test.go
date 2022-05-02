@@ -282,35 +282,33 @@ func TestIntegration(t *testing.T) {
 
 	a.Equal(expected, actual)
 
-	// send event to the webhooks endpoint to update user
 	resp, err := httpClient.Get("http://app:3000/users")
 	if err != nil {
 		a.FailNow(err.Error())
 	}
 	defer resp.Body.Close()
 
-	expected[0].Profile.StatusText = "building"
-	expected[0].Profile.StatusEmoji = ":building:"
+	// send several user_change events, send them to the webhooks endpoint and
+	// check they are reflected on the users page
+	for i := 0; i < 100; i++ {
+		userIndex := rand.Intn(len(expected))
+		//fmt.Println()
+		//spew.Dump(expected[userIndex])
+		expected[userIndex] = generateRandomUser(expected[userIndex].ID)
+		//spew.Dump(expected[userIndex])
+		b := generateUpdateEvent(expected[userIndex])
+		resp, err = httpClient.Post("http://app:3000/webhooks", "application/json", bytes.NewBuffer(b))
+		a.Equal(200, resp.StatusCode)
+		if err != nil {
+			a.FailNow(err.Error())
+		}
+		time.Sleep(time.Millisecond * 200)
 
-	b := generateUpdateEvent(expected[0])
-
-	resp, err = httpClient.Post("http://app:3000/webhooks", "application/json", bytes.NewBuffer(b))
-	a.Equal(200, resp.StatusCode)
-	if err != nil {
-		a.FailNow(err.Error())
+		actual, err = fetchUsers(httpClient)
+		if err != nil {
+			a.FailNow(err.Error())
+		}
+		a.Equal(expected, actual)
+		//spew.Dump(expected[userIndex], actual[userIndex])
 	}
-	time.Sleep(time.Second * 2)
-
-	actual, err = fetchUsers(httpClient)
-	if err != nil {
-		a.FailNow(err.Error())
-	}
-	a.Equal(expected, actual)
-	//spew.Dump(actual[0])
-
-	// TODO: send event to the webhooks endpoint to update user
-	// TODO: request html form, parse html form to check results are correct
-
-	// TODO: send event to the webhooks endpoint to update user
-	// TODO: request html form, parse html form to check results are correct
 }
