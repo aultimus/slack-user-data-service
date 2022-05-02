@@ -37,7 +37,6 @@ func init() {
 
 type UsersResponse struct {
 	Members []slack.User `json:"members"`
-	ok      bool         `json:"ok"`
 }
 
 func wipeDatabase(dbConn *sqlx.DB) error {
@@ -208,12 +207,8 @@ func TestIntegration(t *testing.T) {
 
 	}()
 
-	// TODO sanity check db connection?
-
 	// run http server to mock slack api
 	router := mux.NewRouter()
-
-	// this server will mock the slack api
 	server := &http.Server{
 		Addr:         ":8081",
 		Handler:      router,
@@ -224,9 +219,7 @@ func TestIntegration(t *testing.T) {
 
 	waitChannel := make(chan struct{}, 1)
 
-	// TODO: randomly generate data at runtime
-	// TODO: Test with a lot of users - maybe 1000?
-
+	// generate random user data
 	numUsers := 1000
 	userResponse := UsersResponse{
 		Members: make([]slack.User, numUsers),
@@ -236,7 +229,7 @@ func TestIntegration(t *testing.T) {
 		userResponse.Members[i] = generateRandomUser("")
 	}
 
-	// usersListHandler mocks the slack api
+	// usersListHandler mocks the slack api - writes random user data
 	usersListHandler := func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		b, err := json.Marshal(userResponse)
@@ -311,4 +304,26 @@ func TestIntegration(t *testing.T) {
 		a.Equal(expected, actual)
 		//spew.Dump(expected[userIndex], actual[userIndex])
 	}
+
+	// add a new user via user_change event
+	newUser := generateRandomUser("")
+	b := generateUpdateEvent(newUser)
+	resp, err = httpClient.Post("http://app:3000/webhooks", "application/json", bytes.NewBuffer(b))
+	a.Equal(200, resp.StatusCode)
+	if err != nil {
+		a.FailNow(err.Error())
+	}
+	time.Sleep(time.Millisecond * 200)
+
+	expected = append(expected, newUser)
+	sort.Slice(expected, func(i, j int) bool {
+		return expected[i].ID < expected[j].ID
+	})
+
+	actual, err = fetchUsers(httpClient)
+	if err != nil {
+		a.FailNow(err.Error())
+	}
+	a.Equal(expected, actual)
+
 }

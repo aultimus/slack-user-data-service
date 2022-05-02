@@ -25,11 +25,8 @@ type Postgres struct {
 	dbConn *sqlx.DB
 }
 
-// id, name, deleted, real_name, tz, profile_status_text, profile_status_emoji, profile_image_512
-
 func (p *Postgres) CreateUser(user User) error {
-	_, err := p.dbConn.NamedExec(`INSERT INTO users (id, name, deleted, real_name, tz, profile_status_text, profile_status_emoji, profile_image_512) VALUES (:id, :name, :deleted, :real_name, :tz, :profile_status_text, :profile_status_emoji, :profile_image_512)`, user)
-	return err
+	return p.CreateUsers([]User{user})
 }
 
 func (p *Postgres) CreateUsers(users []User) error {
@@ -50,8 +47,7 @@ func (p *Postgres) CreateUsers(users []User) error {
 }
 
 func (p *Postgres) UpdateUser(user User) error {
-	_, err := p.dbConn.NamedExec(`UPDATE users SET name=:name, deleted=:deleted, real_name=:real_name, tz=:tz, profile_status_text=:profile_status_text, profile_status_emoji=:profile_status_emoji, profile_image_512=:profile_image_512 WHERE id=:id`, user)
-	return err
+	return p.CreateUsers([]User{user})
 }
 
 // may need pagination here
