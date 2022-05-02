@@ -122,6 +122,18 @@ func generateUpdateEvent(user slack.User) []byte {
 	return []byte(s)
 }
 
+func fetchUsers(httpClient *http.Client) ([]slack.User, error) {
+	// request html form, parse html form to check results are correct
+	resp, err := httpClient.Get("http://app:3000/users")
+	if err != nil {
+		return []slack.User{}, err
+	}
+	defer resp.Body.Close()
+
+	b, err := io.ReadAll(resp.Body)
+	return parseHTML(string(b))
+}
+
 // This is written as one test as multiple go tests are known to run concurrently
 // which can make testing against a single server difficult / unpredictable
 func TestIntegration(t *testing.T) {
@@ -214,32 +226,25 @@ func TestIntegration(t *testing.T) {
 	time.Sleep(time.Second * 2)
 
 	// check server has correct information
-	httpClient := http.Client{
+	httpClient := &http.Client{
 		Timeout: 2 * time.Second,
 	}
-	resp, err := httpClient.Get("http://app:3000/users")
+
+	actual, err := fetchUsers(httpClient)
 	if err != nil {
 		a.FailNow(err.Error())
 	}
-	defer resp.Body.Close()
 
 	expected := userResponse.Members[:]
 
 	sort.Slice(expected, func(i, j int) bool {
 		return expected[i].ID < expected[j].ID
 	})
-	// this code relies upon column ordering but we could parse headers out
-
-	b, err := io.ReadAll(resp.Body)
-	actual, err := parseHTML(string(b))
-	if err != nil {
-		a.FailNow(err.Error())
-	}
 
 	a.Equal(expected, actual)
 
 	// send event to the webhooks endpoint to update user
-	resp, err = httpClient.Get("http://app:3000/users")
+	resp, err := httpClient.Get("http://app:3000/users")
 	if err != nil {
 		a.FailNow(err.Error())
 	}
@@ -248,7 +253,7 @@ func TestIntegration(t *testing.T) {
 	expected[0].Profile.StatusText = "building"
 	expected[0].Profile.StatusEmoji = ":building:"
 
-	b = generateUpdateEvent(expected[0])
+	b := generateUpdateEvent(expected[0])
 
 	resp, err = httpClient.Post("http://app:3000/webhooks", "application/json", bytes.NewBuffer(b))
 	a.Equal(200, resp.StatusCode)
@@ -257,15 +262,7 @@ func TestIntegration(t *testing.T) {
 	}
 	time.Sleep(time.Second * 2)
 
-	// request html form, parse html form to check results are correct
-	resp, err = httpClient.Get("http://app:3000/users")
-	if err != nil {
-		a.FailNow(err.Error())
-	}
-	defer resp.Body.Close()
-
-	b, err = io.ReadAll(resp.Body)
-	actual, err = parseHTML(string(b))
+	actual, err = fetchUsers(httpClient)
 	if err != nil {
 		a.FailNow(err.Error())
 	}
