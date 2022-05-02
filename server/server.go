@@ -116,7 +116,6 @@ func (a *App) WebhooksHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	log.Debugf("received %s type event", event.InnerEvent.Type)
-	fmt.Println(string(b))
 	switch event.InnerEvent.Type {
 	// Note: go falls through by default
 	case "user_change":
