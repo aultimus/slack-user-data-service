@@ -116,6 +116,7 @@ func (a *App) WebhooksHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	log.Debugf("received %s type event", event.InnerEvent.Type)
+	fmt.Println(string(b))
 	switch event.InnerEvent.Type {
 	// Note: go falls through by default
 	case "user_change":
@@ -135,6 +136,7 @@ func (a *App) WebhooksHandler(w http.ResponseWriter, req *http.Request) {
 			log.Errorf("error during UpdateUser: %s, user: %s", err.Error(), spew.Sdump(dbUser))
 			return
 		}
+		log.Debugf("updated user %s", dbUser.ID)
 
 	default: // unregonised event type
 		// should we also respond to url_verification events? Seems important when
