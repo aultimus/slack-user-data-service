@@ -39,13 +39,15 @@ type Slacker interface {
 }
 
 type App struct {
-	server      *http.Server
-	db          Storer
-	slackClient Slacker
+	server            *http.Server
+	db                Storer
+	slackClient       Slacker
+	verificationToken string
 }
 
 // Init initialises the application server, call before Run
-func (a *App) Init(portNum string, storer Storer, slackClient Slacker) error {
+func (a *App) Init(portNum string, storer Storer, slackClient Slacker,
+	verificationToken string) error {
 	log.Infof("init")
 	router := mux.NewRouter()
 
@@ -63,6 +65,7 @@ func (a *App) Init(portNum string, storer Storer, slackClient Slacker) error {
 
 	a.server = server
 	a.db = storer
+	a.verificationToken = verificationToken
 	a.slackClient = slackClient
 
 	// run asynchronously so we can still serve requests if api is down
@@ -108,8 +111,8 @@ func (a *App) WebhooksHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	defer req.Body.Close()
 
-	// TODO: use verification
-	event, err := slackevents.ParseEvent(b, slackevents.OptionNoVerifyToken())
+	event, err := slackevents.ParseEvent(b, slackevents.OptionVerifyToken(
+		&slackevents.TokenComparator{a.verificationToken}))
 	if err != nil {
 		log.Errorf("failed slackevents.ParseEvent: %v", err)
 		return

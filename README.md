@@ -6,8 +6,10 @@ Please see the [instructions](INSTRUCTIONS.md) to get started.
 Put environment variables in a `dev.env` file at the top level of the project,
 docker-compose will look for this file.
 
-The `SLACK_API_TOKEN` environment variable is a prerequisite for running
-this service. This will need to be a slack token with `users:read` scope.
+The `SLACK_API_TOKEN` and `SLACK_VERIFICATION_TOKEN` environment variables are
+a prerequisite for running this service. `SLACK_API_TOKEN` will need to be a
+slack token with `users:read` scope. For this specific app these values can
+be found here [here](https://api.slack.com/apps/A03CYL14A5B)
 
 In order to run in development mode execute:
 `make run`
@@ -50,4 +52,3 @@ Slack codechallenge app has these permissions:
 ## TODO
 * Add unit tests that provide quick feedback on regressions
 * Allow configuring of proper db password
-* Support verification

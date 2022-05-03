@@ -51,9 +51,10 @@ func WaitForDB(dbConnStr string) (*sqlx.DB, error) {
 	return handle, nil
 }
 
-func GenerateUpdateEvent(user slack.User) []byte {
+func GenerateUpdateEvent(user slack.User, token string) []byte {
 	updateEventTemplate := `
 	{
+		"token": "%s",
 		"event": {
 			"type": "user_change",
 			"user": {
@@ -76,7 +77,7 @@ func GenerateUpdateEvent(user slack.User) []byte {
 	if user.Deleted {
 		deleted = "true"
 	}
-	s := fmt.Sprintf(updateEventTemplate, user.ID, user.Name, deleted,
+	s := fmt.Sprintf(updateEventTemplate, token, user.ID, user.Name, deleted,
 		user.Profile.Image512, user.Profile.StatusEmoji, user.Profile.StatusText,
 		user.RealName, user.TZ)
 	return []byte(s)

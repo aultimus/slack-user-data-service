@@ -51,6 +51,8 @@ func main() {
 		slackAPIURL = slack.APIURL
 	}
 
+	verificationToken := os.Getenv("SLACK_VERIFICATION_TOKEN")
+
 	// set up database
 	dbStr := os.Getenv("DB_CONNECTION_STRING")
 	dbConn, err := util.WaitForDB(dbStr)
@@ -77,7 +79,7 @@ func main() {
 	// set up app
 	app := server.NewApp()
 
-	err = app.Init(portNum, postgres, slackClient)
+	err = app.Init(portNum, postgres, slackClient, verificationToken)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}

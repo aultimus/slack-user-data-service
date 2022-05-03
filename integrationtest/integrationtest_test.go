@@ -111,6 +111,11 @@ func TestIntegration(t *testing.T) {
 	fmt.Println("integration test started")
 	a := assert.New(t)
 
+	token := os.Getenv("SLACK_VERIFICATION_RESPONSE_TOKEN")
+	if token == "" {
+		a.FailNow("SLACK_VERIFICATION_RESPONSE_TOKEN must be set")
+	}
+
 	// set up db
 	dbStr := os.Getenv("DB_CONNECTION_STRING")
 	dbConn, err := util.WaitForDB(dbStr)
@@ -213,19 +218,19 @@ func TestIntegration(t *testing.T) {
 
 	// send several user_change events, send them to the webhooks endpoint and
 	// check they are reflected on the users page
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 25; i++ {
 		userIndex := rand.Intn(len(expected))
 		//fmt.Println()
 		//spew.Dump(expected[userIndex])
 		expected[userIndex] = util.GenerateRandomUser(expected[userIndex].ID)
 		//spew.Dump(expected[userIndex])
-		b := util.GenerateUpdateEvent(expected[userIndex])
+		b := util.GenerateUpdateEvent(expected[userIndex], token)
 		resp, err = httpClient.Post("http://app:3000/webhooks", "application/json", bytes.NewBuffer(b))
 		a.Equal(200, resp.StatusCode)
 		if err != nil {
 			a.FailNow(err.Error())
 		}
-		time.Sleep(time.Millisecond * 200)
+		time.Sleep(time.Millisecond * 150)
 
 		actual, err = fetchUsers(httpClient)
 		if err != nil {
@@ -237,7 +242,7 @@ func TestIntegration(t *testing.T) {
 
 	// add a new user via user_change event
 	newUser := util.GenerateRandomUser("")
-	b := util.GenerateUpdateEvent(newUser)
+	b := util.GenerateUpdateEvent(newUser, token)
 	resp, err = httpClient.Post("http://app:3000/webhooks", "application/json", bytes.NewBuffer(b))
 	a.Equal(200, resp.StatusCode)
 	if err != nil {
@@ -257,5 +262,21 @@ func TestIntegration(t *testing.T) {
 	a.Equal(expected, actual)
 
 	// TODO: test that we ignore event types other than 'user_change'
+
+	// send event without verification token and check it is not processed
+	anotherUser := util.GenerateRandomUser("")
+	b = util.GenerateUpdateEvent(anotherUser, "foo")
+	resp, err = httpClient.Post("http://app:3000/webhooks", "application/json", bytes.NewBuffer(b))
+	a.Equal(200, resp.StatusCode)
+	if err != nil {
+		a.FailNow(err.Error())
+	}
+	time.Sleep(time.Millisecond * 200)
+
+	actual, err = fetchUsers(httpClient)
+	if err != nil {
+		a.FailNow(err.Error())
+	}
+	a.Equal(expected, actual)
 
 }
