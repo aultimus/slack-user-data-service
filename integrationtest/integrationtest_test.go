@@ -256,4 +256,6 @@ func TestIntegration(t *testing.T) {
 	}
 	a.Equal(expected, actual)
 
+	// TODO: test that we ignore event types other than 'user_change'
+
 }
