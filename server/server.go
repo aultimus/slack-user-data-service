@@ -29,7 +29,6 @@ func NewApp() *App {
 }
 
 type Storer interface {
-	CreateUser(user db.User) error
 	CreateUsers(user []db.User) error
 	UpdateUser(user db.User) error
 	GetAllUsers() ([]db.User, error)

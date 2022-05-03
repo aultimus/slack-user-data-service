@@ -25,10 +25,6 @@ type Postgres struct {
 	dbConn *sqlx.DB
 }
 
-func (p *Postgres) CreateUser(user User) error {
-	return p.CreateUsers([]User{user})
-}
-
 func (p *Postgres) CreateUsers(users []User) error {
 	// Want to do an upsert as if the service has been down the db may be stale
 	// ON CONFLICT does not seem to work with sqlx namedexec
