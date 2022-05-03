@@ -44,7 +44,7 @@ Slack codechallenge app has these permissions:
     * View profile details about people in a workspace, granted by 1 team member
     * Set a user’s presence, granted by 1 team member
     * Edit a user’s profile information and status, granted by 1 team member
-* SQLX provides a connection pool for us
 
+* SQLX provides a connection pool for us
+* To pull manually from slack api use: `curl -X POST -H "Authorization: Bearer $SLACK_API_TOKEN" https://slack.com/api/users.list | python3 -m json.tool`
 ## TODO
-* Test deactivating / deleting user
