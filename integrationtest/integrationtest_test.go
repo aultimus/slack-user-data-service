@@ -16,13 +16,11 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	log "github.com/cocoonlife/timber"
-	"github.com/google/uuid"
-	"github.com/goombaio/namegenerator"
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 	"github.com/slack-go/slack"
 	"github.com/stretchr/testify/assert"
-	"github.com/workos-code-challenge/matthew-ault/bin/util"
+	"github.com/workos-code-challenge/matthew-ault/util"
 
 	_ "github.com/lib/pq"
 )
@@ -93,37 +91,6 @@ func parseHTML(data string) ([]slack.User, error) {
 	return out, nil
 }
 
-func generateUpdateEvent(user slack.User) []byte {
-	updateEventTemplate := `
-	{
-		"event": {
-			"type": "user_change",
-			"user": {
-				"id": "%s",
-				"name": "%s",
-				"deleted": %s,
-				"profile": {
-					"image_512": "%s",
-					"status_emoji": "%s",
-					"status_text": "%s"
-				},
-				"real_name": "%s",
-				"tz": "%s"
-			}
-		},
-		"type": "event_callback"
-	}
-	`
-	deleted := "false"
-	if user.Deleted {
-		deleted = "true"
-	}
-	s := fmt.Sprintf(updateEventTemplate, user.ID, user.Name, deleted,
-		user.Profile.Image512, user.Profile.StatusEmoji, user.Profile.StatusText,
-		user.RealName, user.TZ)
-	return []byte(s)
-}
-
 func fetchUsers(httpClient *http.Client) ([]slack.User, error) {
 	// request html form, parse html form to check results are correct
 	resp, err := httpClient.Get("http://app:3000/users")
@@ -134,43 +101,6 @@ func fetchUsers(httpClient *http.Client) ([]slack.User, error) {
 
 	b, err := io.ReadAll(resp.Body)
 	return parseHTML(string(b))
-}
-
-func generateRandomUser(id string) slack.User {
-	if id == "" {
-		id = uuid.NewString()
-	}
-
-	seed := time.Now().UTC().UnixNano() // TODO: should only do this once
-	nameGenerator := namegenerator.NewNameGenerator(seed)
-	emojis := []string{":lol:", ":work:", ":smiling:", ":house:"}
-	statusTexts := []string{"out eating", "out exercising", "out shopping", "doing programming"}
-	timezones := []string{"EST", "PST", "BST", "GMT"}
-
-	name := nameGenerator.Generate()
-
-	randomNum := rand.Intn(2)
-	var deleted bool
-	if randomNum == 1 {
-		deleted = true
-	}
-
-	return slack.User{
-		ID:       id,
-		Name:     name,
-		RealName: name + " real",
-		Deleted:  deleted,
-		TZ:       timezones[rand.Intn(len(timezones))],
-		Profile: slack.UserProfile{
-			Image512:    "http://imgur.com/" + name + ".png",
-			StatusEmoji: emojis[rand.Intn(len(emojis))],
-			StatusText:  statusTexts[rand.Intn(len(statusTexts))],
-		},
-	}
-}
-
-func mutateUser(user *slack.User) slack.User {
-	return generateRandomUser(user.ID)
 }
 
 // This is written as one test as multiple go tests are known to run concurrently
@@ -226,7 +156,7 @@ func TestIntegration(t *testing.T) {
 	}
 
 	for i := 0; i < numUsers; i++ {
-		userResponse.Members[i] = generateRandomUser("")
+		userResponse.Members[i] = util.GenerateRandomUser("")
 	}
 
 	// usersListHandler mocks the slack api - writes random user data
@@ -287,9 +217,9 @@ func TestIntegration(t *testing.T) {
 		userIndex := rand.Intn(len(expected))
 		//fmt.Println()
 		//spew.Dump(expected[userIndex])
-		expected[userIndex] = generateRandomUser(expected[userIndex].ID)
+		expected[userIndex] = util.GenerateRandomUser(expected[userIndex].ID)
 		//spew.Dump(expected[userIndex])
-		b := generateUpdateEvent(expected[userIndex])
+		b := util.GenerateUpdateEvent(expected[userIndex])
 		resp, err = httpClient.Post("http://app:3000/webhooks", "application/json", bytes.NewBuffer(b))
 		a.Equal(200, resp.StatusCode)
 		if err != nil {
@@ -306,8 +236,8 @@ func TestIntegration(t *testing.T) {
 	}
 
 	// add a new user via user_change event
-	newUser := generateRandomUser("")
-	b := generateUpdateEvent(newUser)
+	newUser := util.GenerateRandomUser("")
+	b := util.GenerateUpdateEvent(newUser)
 	resp, err = httpClient.Post("http://app:3000/webhooks", "application/json", bytes.NewBuffer(b))
 	a.Equal(200, resp.StatusCode)
 	if err != nil {

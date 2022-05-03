@@ -12,9 +12,9 @@ import (
 
 	"github.com/cocoonlife/timber"
 	log "github.com/cocoonlife/timber"
-	"github.com/workos-code-challenge/matthew-ault/bin/util"
 	"github.com/workos-code-challenge/matthew-ault/db"
 	"github.com/workos-code-challenge/matthew-ault/server"
+	"github.com/workos-code-challenge/matthew-ault/util"
 
 	"net/http"
 	_ "net/http/pprof"
