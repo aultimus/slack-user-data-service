@@ -48,3 +48,6 @@ Slack codechallenge app has these permissions:
 * SQLX provides a connection pool for us
 * To pull manually from slack api use: `curl -X POST -H "Authorization: Bearer $SLACK_API_TOKEN" https://slack.com/api/users.list | python3 -m json.tool`
 ## TODO
+* Add unit tests that provide quick feedback on regressions
+* Allow configuring of proper db password
+* Support verification
