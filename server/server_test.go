@@ -10,10 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-/*
-ParseEvent
-*/
-
+// TestParseEvent is a small test to confirm the behaviour of the
+// slackevents.ParseEvent() function and the data format that it expects
 func TestParseEvent(t *testing.T) {
 	flag.Parse()
 
@@ -56,14 +54,5 @@ func TestParseEvent(t *testing.T) {
 	ev, err := slackevents.ParseEvent(b, slackevents.OptionNoVerifyToken())
 	userChangeEvent, ok := ev.InnerEvent.Data.(*slack.UserChangeEvent)
 	a.True(ok)
-	//fmt.Println(string(b))
-	//spew.Dump(event)
 	a.Equal("Matthew Ault", userChangeEvent.User.RealName)
-
-	//userChangeEvent, ok := ev.InnerEvent.Data.(*slack.UserChangeEvent)
-	//a.True(ok)
-	//fmt.Println(string(b))
-	//spew.Dump(event)
-	//spew.Dump(ev)
-	//spew.Dump(userChangeEvent.User)
 }
