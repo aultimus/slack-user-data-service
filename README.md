@@ -9,7 +9,7 @@ docker-compose will look for this file.
 The `SLACK_API_TOKEN` and `SLACK_VERIFICATION_TOKEN` environment variables are
 a prerequisite for running this service. `SLACK_API_TOKEN` will need to be a
 slack token with `users:read` scope. For this specific app these values can
-be found here [here](https://api.slack.com/apps/A03CYL14A5B)
+be found [here](https://api.slack.com/apps/A03CYL14A5B)
 
 In order to run in development mode execute:
 `make run`
@@ -20,7 +20,7 @@ This will spin up the app and an accompanying database via docker-compose.
 In order to run the integration tests execute:
 `make integrationtest`
 This command will return a positive exit code if the tests fail so is easily
-usable in CI. The integration tests runs a server to mock the slack api, sends
+usable in CI. The integration test runs a server to mock the slack api, sends
 the app events and makes requests to the app endpoint to verify behaviour.
 
 TODO unit tests
@@ -36,6 +36,12 @@ features such as out of the box pagination and verification. It does add some
 complexity into the code in that we need to deal with more types and cannot simply
 treat the slack response as raw json but hopefully it provides safety in its stead
 and reliability in the face of any api changes.
+* I wrote integration tests as I wanted to test the full surface area of the
+service. This is a trade off against writing unit tests which would be quicker to
+write, run but would test less surface area.
+* I chose not to process team_joined events but it would not be much work to add
+this functionality, this is because I have observed user_changed events to
+accompany team_join events in every occasion that I have witnessed them.
 
 ## Notes
 Slack codechallenge app has these permissions:
@@ -51,4 +57,4 @@ Slack codechallenge app has these permissions:
 * To pull manually from slack api use: `curl -X POST -H "Authorization: Bearer $SLACK_API_TOKEN" https://slack.com/api/users.list | python3 -m json.tool`
 ## TODO
 * Add unit tests that provide quick feedback on regressions
-* Allow configuring of proper db password
+* Configure proper db password
