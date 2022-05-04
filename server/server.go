@@ -111,6 +111,8 @@ func (a *App) WebhooksHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	defer req.Body.Close()
 
+	log.Debug(string(b))
+
 	event, err := slackevents.ParseEvent(b, slackevents.OptionVerifyToken(
 		&slackevents.TokenComparator{a.verificationToken}))
 	if err != nil {
@@ -120,6 +122,9 @@ func (a *App) WebhooksHandler(w http.ResponseWriter, req *http.Request) {
 	log.Debugf("received %s type event", event.InnerEvent.Type)
 	switch event.InnerEvent.Type {
 	// Note: go falls through by default
+	// It is possible that we also want to process team_join events here but i
+	// have always seem team_join and user_change events co-occur so this may
+	// be somewhat redundant
 	case "user_change":
 		// https://api.slack.com/events/user_change
 		log.Debugf("processing %s event", event.InnerEvent.Type)
@@ -128,8 +133,6 @@ func (a *App) WebhooksHandler(w http.ResponseWriter, req *http.Request) {
 			log.Errorf("user_change event has inner data of type %v ", reflect.TypeOf(event.InnerEvent.Data))
 			return
 		}
-		//fmt.Println(string(b))
-		//spew.Dump(event)
 		apiUser := userChangeEvent.User
 		dbUser := APIToDBUser(apiUser)
 		err = a.db.UpdateUser(dbUser)
