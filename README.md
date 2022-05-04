@@ -42,7 +42,12 @@ write, run but would test less surface area.
 * I chose not to process team_joined events but it would not be much work to add
 this functionality, this is because I have observed user_changed events to
 accompany team_join events in every occasion that I have witnessed them.
-
+* The integration tests currently parse the html form served on /users, this code
+is brittle to changes in format / extensions but provides good confidence that the
+user facing table feature which was the deliverable for this assignment is
+functioning as expected. It would be more stable to test against a REST interface
+that returned all users as JSON, though this would not test the user facing table,
+the tests could fairly easily be adapted to test such an interface.
 ## Notes
 Slack codechallenge app has these permissions:
     * View information about a user’s identity, granted by 1 team member
