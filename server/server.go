@@ -34,19 +34,20 @@ type Storer interface {
 	GetAllUsers() ([]db.User, error)
 }
 
-type Slacker interface {
-	GetUsersContext(ctx context.Context) ([]slack.User, error)
-}
+// TODO: use Slacker interface to enable dependency injection and unit testing
+//type Slacker interface {
+//	GetUsersContext(ctx context.Context) ([]slack.User, error)
+//}
 
 type App struct {
 	server            *http.Server
 	db                Storer
-	slackClient       Slacker
+	slackClient       *slack.Client
 	verificationToken string
 }
 
 // Init initialises the application server, call before Run
-func (a *App) Init(portNum string, storer Storer, slackClient Slacker,
+func (a *App) Init(portNum string, storer Storer, slackClient *slack.Client,
 	verificationToken string) error {
 	log.Infof("init")
 	router := mux.NewRouter()
