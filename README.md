@@ -23,13 +23,10 @@ This command will return a positive exit code if the tests fail so is easily
 usable in CI. The integration test runs a server to mock the slack api, sends
 the app events and makes requests to the app endpoint to verify behaviour.
 
-TODO unit tests
-
 ## Tradeoffs
-* To use an ORM or not to use an ORM? I considered using an ORM but have not
-used one recently in golang and wished to keep the code more flexible to allow
-for extensions to the service. We could always introduce one if maintaining the
-DB code becomes too much of a burden, as it stands sqlx saves a bunch of legwork.
+* To use an ORM or not to use an ORM? I considered using an ORM but wished to keep the code more flexible to allow for extensions to the service. We could always
+introduce one if maintaining the DB code becomes too much of a burden, as it
+stands sqlx saves a bunch of legwork.
 * We use the slack library `github.com/slack-go/slack` rather than using the REST
 API. The slack library provides us with some predefined types and adds some nice
 features such as out of the box pagination and verification. It does add some
@@ -38,7 +35,7 @@ treat the slack response as raw json but hopefully it provides safety in its ste
 and reliability in the face of any api changes.
 * I wrote integration tests as I wanted to test the full surface area of the
 service. This is a trade off against writing unit tests which would be quicker to
-write, run but would test less surface area.
+write and run but would test less surface area.
 * I chose not to process team_joined events but it would not be much work to add
 this functionality, this is because I have observed user_changed events to
 accompany team_join events in every occasion that I have witnessed them.

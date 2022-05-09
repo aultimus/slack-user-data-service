@@ -143,9 +143,9 @@ func (a *App) WebhooksHandler(w http.ResponseWriter, req *http.Request) {
 		}
 		log.Debugf("updated user %s", dbUser.ID)
 
-	default: // unregonised event type
+	default: // unrecognised event type
 		// should we also respond to url_verification events? Seems important when
-		// setting up service but maybe uneccesary now webhooks endpoint is setup
+		// setting up service but maybe unneccesary now webhooks endpoint is setup
 		// https://api.slack.com/events/url_verification
 		log.Debugf("ignoring event of event type %s", event.InnerEvent.Type)
 	}
@@ -180,13 +180,15 @@ func APIToDBUsers(in []slack.User) []db.User {
 func (a *App) FetchUsersLoop() {
 	for {
 		// TODO: make this timeout configurable
-		ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancelFunc := context.WithTimeout(context.Background(), 10*time.Second)
 		err := a.FetchUsers(ctx)
 		if err == nil {
+			cancelFunc()
 			return
 		}
+		cancelFunc()
 		log.Errorf(err.Error())
-		// it would be nicer to have more sophisticated backoff strategy e.g. but
+		// it would be nicer to have more sophisticated backoff strategy e.g.
 		// exponential backoff with randomness but we really only need that if
 		// we have lots of clients developing into a thundering herd
 		// TODO: make this duration configurable
