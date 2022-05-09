@@ -16,6 +16,9 @@ In order to run in development mode execute:
 
 This will spin up the app and an accompanying database via docker-compose.
 
+The service can be accessed on port `3000` with a web browser, so running locally
+the users endpoint can be accessed at `http://localhost:3000/users`
+
 ## Testing
 In order to run the integration tests execute:
 `make integrationtest`
@@ -24,7 +27,8 @@ usable in CI. The integration test runs a server to mock the slack api, sends
 the app events and makes requests to the app endpoint to verify behaviour.
 
 ## Tradeoffs
-* To use an ORM or not to use an ORM? I considered using an ORM but wished to keep the code more flexible to allow for extensions to the service. We could always
+* To use an ORM or not to use an ORM? I considered using an ORM but wished to
+keep the code more flexible to allow for extensions to the service. We could always
 introduce one if maintaining the DB code becomes too much of a burden, as it
 stands sqlx saves a bunch of legwork.
 * We use the slack library `github.com/slack-go/slack` rather than using the REST
