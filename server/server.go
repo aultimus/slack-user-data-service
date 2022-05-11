@@ -60,7 +60,7 @@ func (a *App) Init(portNum string, storer Storer, slackClient *slack.Client,
 		IdleTimeout:  120 * time.Second,
 	}
 
-	router.HandleFunc("/", a.RootHandler)
+	router.HandleFunc("/health", a.HealthHandler)
 	router.HandleFunc("/users", a.UsersHandler).Methods(http.MethodGet)
 	router.HandleFunc("/webhooks", a.WebhooksHandler).Methods(http.MethodPost)
 
@@ -83,8 +83,8 @@ func (a *App) Run() error {
 	return a.server.ListenAndServe()
 }
 
-func (a *App) RootHandler(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintln(w, "Hello world today!")
+func (a *App) HealthHandler(w http.ResponseWriter, req *http.Request) {
+	w.WriteHeader(200)
 }
 
 // UsersHandler on request renders a html table of users stored by this service
