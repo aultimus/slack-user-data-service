@@ -91,6 +91,8 @@ func (a *App) RootHandler(w http.ResponseWriter, req *http.Request) {
 func (a *App) UsersHandler(w http.ResponseWriter, req *http.Request) {
 	users, err := a.db.GetAllUsers()
 	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - Unable to retrieve users from db"))
 		log.Errorf("db GetAllUsers returned error: %v", err)
 		return
 	}
