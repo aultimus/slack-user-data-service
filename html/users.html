@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+    table {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+    
+    td, th {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+    }
+    </style>
+</head>
+<body>
+<table>
+    <tr>
+        <th>id</th>
+        <th>name</th>
+        <th>deleted</th>
+        <th>real name</th>
+        <th>timezone</th>
+        <th>profile status text</th>
+        <th>profile status emoji</th>
+        <th>profile image 512</th>
+    </tr>
+    {{ range .Users}}
+        <tr>
+            <td>{{ .ID }}</td>
+            <td>{{ .Name }}</td>
+            <td>{{ .Deleted }}</td>
+            <td>{{ .RealName }}</td>
+            <td>{{ .TZ}}</td>
+            <td>{{ .ProfileStatusText }}</td>
+            <td>{{ .ProfileStatusEmoji }}</td>
+            <td>{{ .ProfileImage512 }}</td>
+
+        </tr>
+    {{ end}}
+</table>
+</body>
+</html>
