@@ -51,13 +51,13 @@ that returned all users as JSON, though this would not test the user facing tabl
 the tests could fairly easily be adapted to test such an interface.
 ## Notes
 Slack codechallenge app has these permissions:
-    * View information about a user’s identity, granted by 1 team member
-    * View the name, email domain, and icon for workspaces a user is connected to, granted by 1 team member
-    * View people in a workspace, granted by 1 team member
-    * View email addresses of people in a workspace, granted by 1 team member
-    * View profile details about people in a workspace, granted by 1 team member
-    * Set a user’s presence, granted by 1 team member
-    * Edit a user’s profile information and status, granted by 1 team member
+* View information about a user’s identity, granted by 1 team member
+* View the name, email domain, and icon for workspaces a user is connected to, granted by 1 team member
+* View people in a workspace, granted by 1 team member
+* View email addresses of people in a workspace, granted by 1 team member
+* View profile details about people in a workspace, granted by 1 team member
+* Set a user’s presence, granted by 1 team member
+* Edit a user’s profile information and status, granted by 1 team member
 
 * SQLX provides a connection pool for us
 * To pull manually from slack api use: `curl -X POST -H "Authorization: Bearer $SLACK_API_TOKEN" https://slack.com/api/users.list | python3 -m json.tool`
