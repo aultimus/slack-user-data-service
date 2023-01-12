@@ -1,6 +1,5 @@
-Please use this README file for notes of any design decisions, trade-offs, or improvements you’d make to the project.
-
-Please see the [instructions](INSTRUCTIONS.md) to get started.
+# Slack User Data Service
+This service consumes slack webhooks regarding user status, persists user state to a postgres database and provides a HTML interface to this user data.
 
 ## Running
 Put environment variables in a `dev.env` file at the top level of the project,
