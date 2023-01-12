@@ -15,12 +15,12 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/aultimus/slack-user-data-service/util"
 	log "github.com/cocoonlife/timber"
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 	"github.com/slack-go/slack"
 	"github.com/stretchr/testify/assert"
-	"github.com/workos-code-challenge/matthew-ault/util"
 
 	_ "github.com/lib/pq"
 )

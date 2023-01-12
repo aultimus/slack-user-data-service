@@ -10,12 +10,12 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/aultimus/slack-user-data-service/db"
 	log "github.com/cocoonlife/timber"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
-	"github.com/workos-code-challenge/matthew-ault/db"
 )
 
 const (

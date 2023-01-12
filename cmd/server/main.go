@@ -10,11 +10,11 @@ import (
 
 	"flag"
 
+	"github.com/aultimus/slack-user-data-service/db"
+	"github.com/aultimus/slack-user-data-service/server"
+	"github.com/aultimus/slack-user-data-service/util"
 	"github.com/cocoonlife/timber"
 	log "github.com/cocoonlife/timber"
-	"github.com/workos-code-challenge/matthew-ault/db"
-	"github.com/workos-code-challenge/matthew-ault/server"
-	"github.com/workos-code-challenge/matthew-ault/util"
 
 	"net/http"
 	_ "net/http/pprof"
