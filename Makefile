@@ -1,8 +1,5 @@
 .PHONY: integrationtest
 
-ngrok:
-	ngrok start interview --config ngrok.yml
-
 build:
 	docker-compose build
 
