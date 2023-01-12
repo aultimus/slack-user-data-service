@@ -111,9 +111,9 @@ func TestIntegration(t *testing.T) {
 	fmt.Println("integration test started")
 	a := assert.New(t)
 
-	token := os.Getenv("SLACK_VERIFICATION_RESPONSE_TOKEN")
+	token := os.Getenv("SLACK_VERIFICATION_TOKEN")
 	if token == "" {
-		a.FailNow("SLACK_VERIFICATION_RESPONSE_TOKEN must be set")
+		a.FailNow("SLACK_VERIFICATION_TOKEN must be set")
 	}
 
 	// set up db
